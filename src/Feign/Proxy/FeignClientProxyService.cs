@@ -304,6 +304,7 @@ namespace Feign.Proxy
             }
             catch (Exception ex)
             {
+                _logger?.LogError(ex, "Exception during SendAsync()");
                 #region ErrorRequest
                 ErrorRequestEventArgs errorArgs = new ErrorRequestEventArgs(this, ex);
                 _globalFeignClientPipeline.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
@@ -348,7 +349,8 @@ namespace Feign.Proxy
         {
             if (!responseMessage.IsSuccessStatusCode)
             {
-                _logger?.LogError($"request on \"{responseMessage.RequestMessage.RequestUri.ToString()}\" status code : " + responseMessage.StatusCode.GetHashCode());
+                string content = responseMessage.Content.ReadAsStringAsync().GetResult();
+                _logger?.LogError($"request on \"{responseMessage.RequestMessage.RequestUri.ToString()}\" status code : " + responseMessage.StatusCode.GetHashCode() + " content : " + content);
             }
             responseMessage.EnsureSuccessStatusCode();
         }
