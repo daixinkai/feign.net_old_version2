@@ -26,6 +26,11 @@ namespace Feign.Tests
 
         public string Name => throw new NotImplementedException();
 
+        public Task PostValueAsync()
+        {
+            return Task.FromResult<object>(null);
+        }
+
         public Task<QueryResult<JObject>> GetQueryResultValueAsync([PathVariable("id")] string id, [RequestQuery] TestServiceParam param)
         {
             try

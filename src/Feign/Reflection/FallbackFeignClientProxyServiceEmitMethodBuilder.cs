@@ -153,23 +153,6 @@ namespace Feign.Reflection
                 delegateType = typeof(Func<>).MakeGenericType(method.ReturnType);
             }
 
-            //var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(typeBuilder, methodBuilder, method.GetParameters());
-
-            var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(typeBuilder, method);
-
-            // new anonymousMethodClass
-            LocalBuilder anonymousMethodClass = iLGenerator.DeclareLocal(anonymousMethodClassTypeBuild.Item1);
-
-            //field
-            iLGenerator.Emit(OpCodes.Ldarg_0); //this
-            iLGenerator.Emit(OpCodes.Call, parentType.GetProperty("Fallback").GetMethod); //.Fallback
-            for (int i = 1; i <= method.GetParameters().Length; i++)
-            {
-                iLGenerator.Emit(OpCodes.Ldarg_S, i);
-            }
-            iLGenerator.Emit(OpCodes.Newobj, anonymousMethodClassTypeBuild.Item2);
-            iLGenerator.Emit(OpCodes.Stloc, anonymousMethodClass);
-
             int bindingFlagsValue = 0;
             foreach (BindingFlags item in Enum.GetValues(typeof(BindingFlags)))
             {
@@ -177,8 +160,32 @@ namespace Feign.Reflection
             }
             var delegateConstructor = delegateType.GetConstructors((BindingFlags)bindingFlagsValue)[0];
             LocalBuilder invokeDelegate = iLGenerator.DeclareLocal(delegateType);
-            iLGenerator.Emit(OpCodes.Ldloc, anonymousMethodClass);
-            iLGenerator.Emit(OpCodes.Ldftn, anonymousMethodClassTypeBuild.Item3);
+            // if has parameters
+            if (method.GetParameters().Length > 0)
+            {
+                //var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(typeBuilder, methodBuilder, method.GetParameters());
+                var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(typeBuilder, method);
+                // new anonymousMethodClass
+                LocalBuilder anonymousMethodClass = iLGenerator.DeclareLocal(anonymousMethodClassTypeBuild.Item1);
+                //field
+                iLGenerator.Emit(OpCodes.Ldarg_0); //this
+                iLGenerator.Emit(OpCodes.Call, parentType.GetProperty("Fallback").GetMethod); //.Fallback
+                for (int i = 1; i <= method.GetParameters().Length; i++)
+                {
+                    iLGenerator.Emit(OpCodes.Ldarg_S, i);
+                }
+                iLGenerator.Emit(OpCodes.Newobj, anonymousMethodClassTypeBuild.Item2);
+                iLGenerator.Emit(OpCodes.Stloc, anonymousMethodClass);
+                iLGenerator.Emit(OpCodes.Ldloc, anonymousMethodClass);
+                iLGenerator.Emit(OpCodes.Ldftn, anonymousMethodClassTypeBuild.Item3);
+            }
+            else
+            {
+                iLGenerator.Emit(OpCodes.Ldarg_0); //this
+                iLGenerator.Emit(OpCodes.Call, parentType.GetProperty("Fallback").GetMethod); //.Fallback
+                iLGenerator.Emit(OpCodes.Ldftn, method);
+            }
+
             iLGenerator.Emit(OpCodes.Newobj, delegateConstructor);
             iLGenerator.Emit(OpCodes.Stloc, invokeDelegate);
 

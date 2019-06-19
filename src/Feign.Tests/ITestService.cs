@@ -18,6 +18,9 @@ namespace Feign.Tests
 
         //string Name { get; }
 
+        [RequestMapping("/{id}", Method = "POST")]
+        Task PostValueAsync();
+
         [RequestMapping("/{id}", Method = "GET")]
         Task<QueryResult<JObject>> GetQueryResultValueAsync([PathVariable("id")]string id, [RequestQuery] TestServiceParam param);
 
