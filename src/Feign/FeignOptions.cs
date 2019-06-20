@@ -2,20 +2,25 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Feign
 {
-    public abstract class FeignOptionsBase : IFeignOptions
+    public class FeignOptions : IFeignOptions
     {
-        protected FeignOptionsBase()
+        public FeignOptions()
         {
+            Assemblies = new List<Assembly>();
             Converters = new ConverterCollection();
             Converters.AddConverter(new ObjectStringConverter());
             FeignClientPipeline = new GlobalFeignClientPipelineBuilder();
+            Scope = FeignClientScope.Transient;
         }
+        public IList<Assembly> Assemblies { get; }
         public ConverterCollection Converters { get; }
         public IGlobalFeignClientPipelineBuilder FeignClientPipeline { get; }
+        public FeignClientScope Scope { get; set; }
     }
 }

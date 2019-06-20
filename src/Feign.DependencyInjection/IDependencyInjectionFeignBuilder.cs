@@ -4,11 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Feign
+namespace Feign.DependencyInjection
 {
-    public interface IFeignBuilder
+    public interface IDependencyInjectionFeignBuilder : IFeignBuilder
     {
-        ConverterCollection Converters { get; }
         IServiceCollection Services { get; }
     }
 }

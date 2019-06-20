@@ -9,18 +9,18 @@ namespace Feign.Reflection
 #if DEBUG&&NET45
     public
 #endif
-    static class DynamicAssembly
+     class DynamicAssembly
     {
-        static AssemblyBuilder _assemblyBuilder;
-        static ModuleBuilder _moduleBuilder;
-        static string _guid = Guid.NewGuid().ToString("N").ToUpper();
+        AssemblyBuilder _assemblyBuilder;
+        ModuleBuilder _moduleBuilder;
+        string _guid = Guid.NewGuid().ToString("N").ToUpper();
 
 #if DEBUG&&NET45
-        public static bool DEBUG_MODE = false;
-        public static string AssemblyName = "Feign.Debug.dll";
+        public bool DEBUG_MODE = false;
+        public string AssemblyName = "Feign.Debug.dll";
 #endif
 
-        public static AssemblyBuilder AssemblyBuilder
+        public AssemblyBuilder AssemblyBuilder
         {
             get
             {
@@ -28,7 +28,7 @@ namespace Feign.Reflection
                 return _assemblyBuilder;
             }
         }
-        public static ModuleBuilder ModuleBuilder
+        public ModuleBuilder ModuleBuilder
         {
             get
             {
@@ -36,7 +36,7 @@ namespace Feign.Reflection
                 return _moduleBuilder;
             }
         }
-        static void EnsureAssemblyBuilder()
+        void EnsureAssemblyBuilder()
         {
             if (_assemblyBuilder == null)
             {
@@ -54,7 +54,7 @@ namespace Feign.Reflection
 #endif
             }
         }
-        static void EnsureModuleBuilder()
+        void EnsureModuleBuilder()
         {
             EnsureAssemblyBuilder();
             if (_moduleBuilder == null)
@@ -73,36 +73,6 @@ namespace Feign.Reflection
 #endif
             }
         }
-
-
-        //static readonly IDictionary<Type, TypeBuilder> _proxyTypeMap = new Dictionary<Type, TypeBuilder>();
-
-
-        //public static TypeBuilder GetProxyTypeBuilder(Type type)
-        //{
-        //    TypeBuilder typeBuilder;
-        //    if (_proxyTypeMap.TryGetValue(type, out typeBuilder))
-        //    {
-        //        return typeBuilder;
-        //    }
-        //    try
-        //    {
-        //        typeBuilder = ModuleBuilder.DefineType(type.Name + "_Proxy_" + _guid,
-        //          TypeAttributes.Public |
-        //          TypeAttributes.Class |
-        //          TypeAttributes.AutoClass |
-        //          TypeAttributes.AnsiClass |
-        //          TypeAttributes.BeforeFieldInit |
-        //          TypeAttributes.AutoLayout,
-        //          null);
-        //        _proxyTypeMap.Add(type, typeBuilder);
-        //    }
-        //    catch
-        //    {
-        //        _proxyTypeMap.TryGetValue(type, out typeBuilder);
-        //    }
-        //    return typeBuilder;
-        //}
 
     }
 }

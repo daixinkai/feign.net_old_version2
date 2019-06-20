@@ -1,47 +1,54 @@
 ﻿using Feign;
+using Feign.Autofac;
 using Feign.Cache;
-using Feign.DependencyInjection;
 using Feign.Discovery;
 using Feign.Logging;
-using Feign.Proxy;
-using Feign.Reflection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DependencyInjection
+namespace Autofac
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class ServiceCollectionExtensions
+    public static class AutofacExtensions
     {
-
-        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services)
+        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder)
         {
-            return AddFeignClients(services, (FeignOptions)null);
+            return AddFeignClients(containerBuilder, (FeignOptions)null);
         }
 
-        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services, Action<FeignOptions> setupAction)
+        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder, Action<FeignOptions> setupAction)
         {
             FeignOptions options = new FeignOptions();
             setupAction?.Invoke(options);
-            return AddFeignClients(services, options);
+            return AddFeignClients(containerBuilder, options);
         }
 
-        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services, FeignOptions options)
+        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder, FeignOptions options)
         {
             if (options == null)
             {
                 options = new FeignOptions();
             }
 
-            DependencyInjectionFeignBuilder feignBuilder = new DependencyInjectionFeignBuilder();
 
-            feignBuilder.Services = services;
+
+            //services.AddSingleton<ILoggerFactory, LoggerFactory>();
+            //services.AddSingleton<IServiceCacheProvider, ServiceCacheProvider>();
+
+            AutofacFeignBuilder feignBuilder = new AutofacFeignBuilder();
+
+            feignBuilder.ContainerBuilder = containerBuilder;
             feignBuilder.Options = options;
+
+
+            feignBuilder.AddServiceCacheProvider<DefaultServiceCacheProvider>();
+            feignBuilder.AddServiceDiscovery<DefaultServiceDiscovery>();
+            feignBuilder.AddLoggerFactory<DefaultLoggerFactory>();
 
             if (options.Assemblies.Count == 0)
             {
@@ -54,13 +61,10 @@ namespace Microsoft.Extensions.DependencyInjection
                     feignBuilder.AddFeignClients(assembly, options.Scope);
                 }
             }
-            feignBuilder.AddService(typeof(ILoggerFactory), typeof(LoggerFactory), FeignClientScope.Singleton);
-            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(ServiceCacheProvider), FeignClientScope.Singleton);
             feignBuilder.AddService<IFeignOptions>(options);
             feignBuilder.TypeBuilder.FinishBuild();
             return feignBuilder;
         }
-
 
     }
 }

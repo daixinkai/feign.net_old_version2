@@ -11,12 +11,22 @@ namespace Feign.Reflection
 {
     public class FeignClientTypeBuilder
     {
-        public FeignClientTypeBuilder()
+        public FeignClientTypeBuilder() : this(new DynamicAssembly())
+        {
+        }
+
+#if DEBUG&&NET45
+        public
+#else
+        internal
+#endif
+        FeignClientTypeBuilder(DynamicAssembly dynamicAssembly)
         {
             _guid = Guid.NewGuid().ToString("N").ToUpper();
             _suffix = "_Proxy_" + _guid;
+            _dynamicAssembly = dynamicAssembly;
             _methodBuilder = new FeignClientProxyServiceEmitMethodBuilder();
-            _fallbackMethodBuilder = new FallbackFeignClientProxyServiceEmitMethodBuilder();
+            _fallbackMethodBuilder = new FallbackFeignClientProxyServiceEmitMethodBuilder(_dynamicAssembly);
         }
 
         string _guid;
@@ -25,6 +35,8 @@ namespace Feign.Reflection
         FeignClientProxyServiceEmitMethodBuilder _methodBuilder;
 
         FallbackFeignClientProxyServiceEmitMethodBuilder _fallbackMethodBuilder;
+
+        DynamicAssembly _dynamicAssembly;
 
         public Type BuildType(Type interfaceType)
         {
@@ -149,7 +161,7 @@ namespace Feign.Reflection
 
         private TypeBuilder CreateTypeBuilder(string typeName, Type parentType)
         {
-            return DynamicAssembly.ModuleBuilder.DefineType(typeName,
+            return _dynamicAssembly.ModuleBuilder.DefineType(typeName,
                           TypeAttributes.Public |
                           TypeAttributes.Class |
                           TypeAttributes.AutoClass |
@@ -167,7 +179,7 @@ namespace Feign.Reflection
         public void Save()
         {
             FinishBuild();
-            DynamicAssembly.AssemblyBuilder.Save(DynamicAssembly.AssemblyName);
+            _dynamicAssembly.AssemblyBuilder.Save(_dynamicAssembly.AssemblyName);
         }
 #endif
 

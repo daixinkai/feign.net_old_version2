@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Discovery
 {
-    class ServiceDiscoveryHttpClientHandler : HttpClientHandler
+    public class ServiceDiscoveryHttpClientHandler : HttpClientHandler
     {
 
         private readonly ILogger _logger;
@@ -70,6 +70,17 @@ namespace Feign.Discovery
                 serviceFeignClientPipeline?.OnSendingRequest(_feignClient, sendingArgs);
                 _globalFeignClientPipeline?.OnSendingRequest(_feignClient, sendingArgs);
                 request = sendingArgs.RequestMessage;
+                if (request == null)
+                {
+                    //TODO:OnSendingRequest
+                    _logger?.LogError($"SendingRequest is null;");
+                    return new HttpResponseMessage(System.Net.HttpStatusCode.ExpectationFailed)
+                    {
+                        Content = new StringContent(""),
+                        //Headers = new System.Net.Http.Headers.HttpResponseHeaders(),
+                        RequestMessage = request
+                    };
+                }
                 #endregion
 
                 #region CannelRequest

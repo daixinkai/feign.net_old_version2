@@ -10,7 +10,9 @@ namespace Feign
 {
     public interface IFeignOptions
     {
+        IList<Assembly> Assemblies { get; }
         ConverterCollection Converters { get; }
         IGlobalFeignClientPipelineBuilder FeignClientPipeline { get; }
+        FeignClientScope Scope { get; }
     }
 }

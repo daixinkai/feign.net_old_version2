@@ -79,12 +79,12 @@ namespace Feign.Reflection
 
         static readonly System.Collections.Concurrent.ConcurrentDictionary<Comparer, Tuple<Type, ConstructorInfo, MethodInfo>> _map = new System.Collections.Concurrent.ConcurrentDictionary<Comparer, Tuple<Type, ConstructorInfo, MethodInfo>>();
 
-        public static Tuple<Type, ConstructorInfo, MethodInfo> BuildType(Type targetType, MethodInfo method)
+        public static Tuple<Type, ConstructorInfo, MethodInfo> BuildType(DynamicAssembly dynamicAssembly, Type targetType, MethodInfo method)
         {
-            return BuildType(targetType, method, null);
+            return BuildType(dynamicAssembly, targetType, method, null);
         }
 
-        public static Tuple<Type, ConstructorInfo, MethodInfo> BuildType(Type targetType, MethodInfo method, ParameterInfo[] parameters)
+        public static Tuple<Type, ConstructorInfo, MethodInfo> BuildType(DynamicAssembly dynamicAssembly, Type targetType, MethodInfo method, ParameterInfo[] parameters)
         {
             Comparer comparer = new Comparer
             {
@@ -96,18 +96,18 @@ namespace Feign.Reflection
             {
                 string typeName = comparer.TargetType.Name;
                 typeName += "_" + Guid.NewGuid().ToString("N");
-                return BuildNewType(typeName, comparer.TargetType.Namespace + ".Anonymous", comparer);
+                return BuildNewType(dynamicAssembly, typeName, comparer.TargetType.Namespace + ".Anonymous", comparer);
             });
         }
 
-        static Tuple<Type, ConstructorInfo, MethodInfo> BuildNewType(string typeName, string nameSpace, Comparer comparer)
+        static Tuple<Type, ConstructorInfo, MethodInfo> BuildNewType(DynamicAssembly dynamicAssembly, string typeName, string nameSpace, Comparer comparer)
         {
             string fullName = nameSpace + "." + typeName;
             if (fullName.StartsWith("."))
             {
                 fullName = fullName.TrimStart('.');
             }
-            TypeBuilder typeBuilder = CreateTypeBuilder(fullName, null);
+            TypeBuilder typeBuilder = CreateTypeBuilder(dynamicAssembly, fullName, null);
 
             // field
             ParameterInfo[] parameters = comparer.Parameters ?? comparer.Method.GetParameters();
@@ -133,9 +133,9 @@ namespace Feign.Reflection
             return Tuple.Create(typeBuilder.CreateTypeInfo().AsType(), (ConstructorInfo)constructorBuilder, (MethodInfo)methodBuilder);
         }
 
-        static TypeBuilder CreateTypeBuilder(string typeName, Type parentType)
+        static TypeBuilder CreateTypeBuilder(DynamicAssembly dynamicAssembly, string typeName, Type parentType)
         {
-            return DynamicAssembly.ModuleBuilder.DefineType(typeName,
+            return dynamicAssembly.ModuleBuilder.DefineType(typeName,
                           //TypeAttributes.Public |
                           TypeAttributes.NotPublic |
                           TypeAttributes.Class |
