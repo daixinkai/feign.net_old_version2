@@ -67,6 +67,7 @@ namespace Feign.Reflection
                 parentType = typeof(FeignClientProxyService<>);
                 parentType = parentType.MakeGenericType(interfaceType);
             }
+            parentType = GetParentType(parentType);
             TypeBuilder typeBuilder = CreateTypeBuilder(GetTypeFullName(interfaceType), parentType);
 
             BuildConstructor(typeBuilder, parentType);
@@ -85,6 +86,16 @@ namespace Feign.Reflection
             return type;
         }
 
+        public virtual Type GetParentType(Type parentType)
+        {
+            return parentType;
+        }
+
+        public virtual ConstructorInfo GetConstructor(Type parentType)
+        {
+            return parentType.GetConstructors()[0];
+        }
+
         string GetTypeFullName(Type interfaceType)
         {
             return interfaceType.FullName + _suffix;
@@ -95,7 +106,7 @@ namespace Feign.Reflection
 
         void BuildConstructor(TypeBuilder typeBuilder, Type parentType)
         {
-            ConstructorInfo baseConstructorInfo = parentType.GetConstructors()[0];
+            ConstructorInfo baseConstructorInfo = GetConstructor(parentType);
             var parameterTypes = baseConstructorInfo.GetParameters().Select(s => s.ParameterType).ToArray();
 
             ConstructorBuilder constructorBuilder = typeBuilder.DefineConstructor(

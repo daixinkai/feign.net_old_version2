@@ -45,17 +45,17 @@ namespace Microsoft.Extensions.DependencyInjection
 
             if (options.Assemblies.Count == 0)
             {
-                feignBuilder.AddFeignClients(Assembly.GetEntryAssembly(), options.Scope);
+                feignBuilder.AddFeignClients(Assembly.GetEntryAssembly(), options.Lifetime);
             }
             else
             {
                 foreach (var assembly in options.Assemblies)
                 {
-                    feignBuilder.AddFeignClients(assembly, options.Scope);
+                    feignBuilder.AddFeignClients(assembly, options.Lifetime);
                 }
             }
-            feignBuilder.AddService(typeof(ILoggerFactory), typeof(LoggerFactory), FeignClientScope.Singleton);
-            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(ServiceCacheProvider), FeignClientScope.Singleton);
+            feignBuilder.AddService(typeof(ILoggerFactory), typeof(LoggerFactory), FeignClientLifetime.Singleton);
+            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(ServiceCacheProvider), FeignClientLifetime.Singleton);
             feignBuilder.AddService<IFeignOptions>(options);
             feignBuilder.TypeBuilder.FinishBuild();
             return feignBuilder;

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Fallback
 {
-    public interface IFallbackFactoryFeignClient</*out*/ T> : IFeignClient 
+    public interface IFallbackFactoryFeignClient</*out*/ T> : IFeignClient
     {
         IFallbackFactory<T> FallbackFactory { get; }
     }

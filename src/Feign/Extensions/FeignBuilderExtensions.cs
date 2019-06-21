@@ -21,11 +21,12 @@ namespace Feign
             return feignBuilder;
         }
 
-        public static void AddFeignClients(this IFeignBuilder feignBuilder, Assembly assembly, FeignClientScope scope)
+        public static TFeignBuilder AddFeignClients<TFeignBuilder>(this TFeignBuilder feignBuilder, Assembly assembly, FeignClientLifetime lifetime)
+            where TFeignBuilder : IFeignBuilder
         {
             if (assembly == null)
             {
-                return;
+                return feignBuilder;
             }
             foreach (var serviceType in assembly.GetTypes())
             {
@@ -34,33 +35,50 @@ namespace Feign
                 {
                     continue;
                 }
-                feignBuilder.AddService(serviceType, proxyType, scope);
+                feignBuilder.AddService(serviceType, proxyType, lifetime);
                 // add fallback
                 FeignClientAttribute feignClientAttribute = serviceType.GetCustomAttribute<FeignClientAttribute>();
                 if (feignClientAttribute.Fallback != null)
                 {
-                    feignBuilder.AddService(feignClientAttribute.Fallback, scope);
+                    feignBuilder.AddService(feignClientAttribute.Fallback, lifetime);
                 }
                 if (feignClientAttribute.FallbackFactory != null)
                 {
-                    feignBuilder.AddService(feignClientAttribute.FallbackFactory, scope);
+                    feignBuilder.AddService(feignClientAttribute.FallbackFactory, lifetime);
                 }
             }
+            return feignBuilder;
         }
 
-        public static void AddLoggerFactory<TLoggerFactory>(this IFeignBuilder feignBuilder) where TLoggerFactory : ILoggerFactory
+        public static IFeignBuilder AddLoggerFactory<TLoggerFactory>(this IFeignBuilder feignBuilder) where TLoggerFactory : ILoggerFactory
         {
-            feignBuilder.AddService(typeof(ILoggerFactory), typeof(TLoggerFactory), FeignClientScope.Singleton);
+            if (feignBuilder.HasService(typeof(ILoggerFactory)))
+            {
+                feignBuilder.RemoveService(typeof(ILoggerFactory));
+            }
+            feignBuilder.AddService(typeof(ILoggerFactory), typeof(TLoggerFactory), FeignClientLifetime.Singleton);
+            return feignBuilder;
         }
 
-        public static void AddServiceDiscovery<TServiceDiscovery>(this IFeignBuilder feignBuilder) where TServiceDiscovery : IServiceDiscovery
+
+        public static IFeignBuilder AddServiceDiscovery<TServiceDiscovery>(this IFeignBuilder feignBuilder) where TServiceDiscovery : IServiceDiscovery
         {
-            feignBuilder.AddService(typeof(IServiceDiscovery), typeof(TServiceDiscovery), FeignClientScope.Singleton);
+            if (feignBuilder.HasService(typeof(IServiceDiscovery)))
+            {
+                feignBuilder.RemoveService(typeof(IServiceDiscovery));
+            }
+            feignBuilder.AddService(typeof(IServiceDiscovery), typeof(TServiceDiscovery), FeignClientLifetime.Singleton);
+            return feignBuilder;
         }
 
-        public static void AddServiceCacheProvider<TServiceCacheProvider>(this IFeignBuilder feignBuilder) where TServiceCacheProvider : IServiceCacheProvider
+        public static IFeignBuilder AddServiceCacheProvider<TServiceCacheProvider>(this IFeignBuilder feignBuilder) where TServiceCacheProvider : IServiceCacheProvider
         {
-            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(TServiceCacheProvider), FeignClientScope.Singleton);
+            if (feignBuilder.HasService(typeof(IServiceCacheProvider)))
+            {
+                feignBuilder.RemoveService(typeof(IServiceCacheProvider));
+            }
+            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(TServiceCacheProvider), FeignClientLifetime.Singleton);
+            return feignBuilder;
         }
 
         //public static void AddMissingDefaultServices(this IFeignBuilder feignBuilder)

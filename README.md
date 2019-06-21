@@ -6,9 +6,9 @@ spring cloud feign for .net
             services.AddFeignClients(options =>
             {
                 options.Assemblies.Add(typeof(ITestService).Assembly);
-                options.Lifetime = ServiceLifetime.Singleton;
-                options.Lifetime = ServiceLifetime.Scoped;
-                options.Lifetime = ServiceLifetime.Transient;
+                options.Lifetime = FeignClientLifetime.Singleton;
+                options.Lifetime = FeignClientLifetime.Scoped;
+                options.Lifetime = FeignClientLifetime.Transient;
                 options.FeignClientPipeline.Authorization(proxy =>
                 {
                     return ("global", "asdasd");

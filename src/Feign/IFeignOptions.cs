@@ -13,6 +13,6 @@ namespace Feign
         IList<Assembly> Assemblies { get; }
         ConverterCollection Converters { get; }
         IGlobalFeignClientPipelineBuilder FeignClientPipeline { get; }
-        FeignClientScope Scope { get; }
+        FeignClientLifetime Lifetime { get; }
     }
 }

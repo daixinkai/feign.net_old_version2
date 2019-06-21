@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Feign
 {
-    public enum FeignClientScope
+    public enum FeignClientLifetime
     {
         //
         // 摘要:

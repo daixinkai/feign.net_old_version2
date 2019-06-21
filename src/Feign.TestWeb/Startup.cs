@@ -28,65 +28,68 @@ namespace Feign.TestWeb
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             //services.AddDiscoveryClient(Configuration);
-            services.AddFeignClients(options =>
-            {
-                options.Assemblies.Add(typeof(ITestService).Assembly);
-                options.Scope = FeignClientScope.Singleton;
-                options.Scope = FeignClientScope.Scoped;
-                options.Scope = FeignClientScope.Transient;
-                options.FeignClientPipeline.Authorization(proxy =>
-                {
-                    return ("global", "asdasd");
-                });
-                //options.FeignClientPipeline.BuildingRequest += FeignClientPipeline_BuildingRequest;
-                options.FeignClientPipeline.Service("yun-platform-service-provider").BuildingRequest += (sender, e) =>
-                {
 
-                    IFallbackFeignClient<object> fallbackFeignClient = e.FeignClient as IFallbackFeignClient<object>;
+            services.AddFeignClients().AddTestFeignClients();
 
-                    var fallback = fallbackFeignClient?.Fallback;
+            //services.AddFeignClients(options =>
+            //{
+            //    options.Assemblies.Add(typeof(ITestService).Assembly);
+            //    options.Lifetime = FeignClientLifetime.Singleton;
+            //    options.Lifetime = FeignClientLifetime.Scoped;
+            //    options.Lifetime = FeignClientLifetime.Transient;
+            //    options.FeignClientPipeline.Authorization(proxy =>
+            //    {
+            //        return ("global", "asdasd");
+            //    });
+            //    //options.FeignClientPipeline.BuildingRequest += FeignClientPipeline_BuildingRequest;
+            //    options.FeignClientPipeline.Service("yun-platform-service-provider").BuildingRequest += (sender, e) =>
+            //    {
 
-                    if (!e.Headers.ContainsKey("Authorization"))
-                    {
-                        e.Headers["Authorization"] = "service asdasd";
-                    }
-                    e.Headers["Accept-Encoding"] = "gzip, deflate, br";
+            //        IFallbackFeignClient<object> fallbackFeignClient = e.FeignClient as IFallbackFeignClient<object>;
 
-                    //add session
-                    e.Headers.Add("cookie", "csrftoken=EGxYkyZeT3DxEsvYsdR5ncmzpi9pmnQx; _bl_uid=nLjRstOyqOejLv2s0xtzqs74Xsmg; courseId=1; versionId=522; textbookId=2598; Hm_lvt_f0984c42ef98965e03c60661581cd219=1559783251,1559818390,1560213044,1560396804; uuid=6a30ff68-2b7c-4cde-a355-2e332b74e31d##1; Hm_lpvt_f0984c42ef98965e03c60661581cd219=1560413345; SESSION=5ee4854d-34b7-423a-9cca-76ddc8a0f111; sid=5ee4854d-34b7-423a-9cca-76ddc8a0f111");
+            //        var fallback = fallbackFeignClient?.Fallback;
 
-                };
+            //        if (!e.Headers.ContainsKey("Authorization"))
+            //        {
+            //            e.Headers["Authorization"] = "service asdasd";
+            //        }
+            //        e.Headers["Accept-Encoding"] = "gzip, deflate, br";
 
-                options.FeignClientPipeline.Service("yun-platform-service-provider").Authorization(proxy =>
-                {
-                    return ("service", "asdasd");
-                });
+            //        //add session
+            //        e.Headers.Add("cookie", "csrftoken=EGxYkyZeT3DxEsvYsdR5ncmzpi9pmnQx; _bl_uid=nLjRstOyqOejLv2s0xtzqs74Xsmg; courseId=1; versionId=522; textbookId=2598; Hm_lvt_f0984c42ef98965e03c60661581cd219=1559783251,1559818390,1560213044,1560396804; uuid=6a30ff68-2b7c-4cde-a355-2e332b74e31d##1; Hm_lpvt_f0984c42ef98965e03c60661581cd219=1560413345; SESSION=5ee4854d-34b7-423a-9cca-76ddc8a0f111; sid=5ee4854d-34b7-423a-9cca-76ddc8a0f111");
 
-                options.FeignClientPipeline.SendingRequest += FeignClientPipeline_SendingRequest;
+            //    };
+
+            //    options.FeignClientPipeline.Service("yun-platform-service-provider").Authorization(proxy =>
+            //    {
+            //        return ("service", "asdasd");
+            //    });
+
+            //    options.FeignClientPipeline.SendingRequest += FeignClientPipeline_SendingRequest;
 
 
-                options.FeignClientPipeline.Service("yun-platform-service-provider").ReceivingResponse += (sender, e) =>
-                {
+            //    options.FeignClientPipeline.Service("yun-platform-service-provider").ReceivingResponse += (sender, e) =>
+            //    {
 
-                };
+            //    };
 
-                options.FeignClientPipeline.ReceivingQueryResult();
+            //    options.FeignClientPipeline.ReceivingQueryResult();
 
-                options.FeignClientPipeline.CancelRequest += (sender, e) =>
-                {
-                    e.CancellationToken.Register((state) =>
-                    {
+            //    options.FeignClientPipeline.CancelRequest += (sender, e) =>
+            //    {
+            //        e.CancellationToken.Register((state) =>
+            //        {
 
-                    }, sender);
-                };
-                options.FeignClientPipeline.ErrorRequest += (sender, e) =>
-                {
-                    Exception exception = e.Exception;
-                    //e.ExceptionHandled = true;
-                };
-            })
-            //.AddDiscoveryClient();
-            ;
+            //        }, sender);
+            //    };
+            //    options.FeignClientPipeline.ErrorRequest += (sender, e) =>
+            //    {
+            //        Exception exception = e.Exception;
+            //        //e.ExceptionHandled = true;
+            //    };
+            //})
+            ////.AddDiscoveryClient();
+            //;
         }
 
         private void FeignClientPipeline_SendingRequest(object sender, SendingRequestEventArgs e)

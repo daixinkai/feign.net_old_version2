@@ -16,11 +16,11 @@ namespace Feign
             Converters = new ConverterCollection();
             Converters.AddConverter(new ObjectStringConverter());
             FeignClientPipeline = new GlobalFeignClientPipelineBuilder();
-            Scope = FeignClientScope.Transient;
+            Lifetime = FeignClientLifetime.Transient;
         }
         public IList<Assembly> Assemblies { get; }
         public ConverterCollection Converters { get; }
         public IGlobalFeignClientPipelineBuilder FeignClientPipeline { get; }
-        public FeignClientScope Scope { get; set; }
+        public FeignClientLifetime Lifetime { get; set; }
     }
 }

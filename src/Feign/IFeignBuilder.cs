@@ -11,13 +11,15 @@ namespace Feign
         IFeignOptions Options { get; }
         FeignClientTypeBuilder TypeBuilder { get; }
 
-        void AddService(Type serviceType, Type implType, FeignClientScope scope);
+        void AddService(Type serviceType, Type implType, FeignClientLifetime lifetime);
 
-        void AddService(Type serviceType, FeignClientScope scope);
+        void AddService(Type serviceType, FeignClientLifetime lifetime);
 
         void AddService<TService>(TService service) where TService : class;
 
-        //bool IsRegister(Type serviceType);
+        bool HasService(Type serviceType);
+
+        void RemoveService(Type serviceType);
 
     }
 }

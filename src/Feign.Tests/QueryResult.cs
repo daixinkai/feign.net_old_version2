@@ -37,13 +37,11 @@ namespace Feign.Tests
         {
             Data = data;
         }
-        public QueryResult(object data)
-        {
-            Data = (T)data;
-        }
         /// <summary>
         /// 结果
         /// </summary>
         public T Data { get; set; }
+                
+
     }
 }

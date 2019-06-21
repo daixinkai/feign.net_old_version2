@@ -17,8 +17,6 @@ namespace Feign.DependencyInjection
             TypeBuilder = new FeignClientTypeBuilder();
         }
 
-        public ConverterCollection Converters { get { return Options?.Converters; } }
-
         public FeignOptions Options { get; set; }
 
         public IServiceCollection Services { get; set; }
@@ -28,34 +26,34 @@ namespace Feign.DependencyInjection
         IFeignOptions IFeignBuilder.Options => Options;
 
 
-        public void AddService(Type serviceType, Type implType, FeignClientScope scope)
+        public void AddService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {
-            switch (scope)
+            switch (lifetime)
             {
-                case FeignClientScope.Singleton:
+                case FeignClientLifetime.Singleton:
                     Services.TryAddSingleton(serviceType, implType);
                     break;
-                case FeignClientScope.Scoped:
+                case FeignClientLifetime.Scoped:
                     Services.TryAddScoped(serviceType, implType);
                     break;
-                case FeignClientScope.Transient:
+                case FeignClientLifetime.Transient:
                     Services.TryAddTransient(serviceType, implType);
                     break;
                 default:
                     break;
             }
         }
-        public void AddService(Type serviceType, FeignClientScope scope)
+        public void AddService(Type serviceType, FeignClientLifetime lifetime)
         {
-            switch (scope)
+            switch (lifetime)
             {
-                case FeignClientScope.Singleton:
+                case FeignClientLifetime.Singleton:
                     Services.TryAddSingleton(serviceType);
                     break;
-                case FeignClientScope.Scoped:
+                case FeignClientLifetime.Scoped:
                     Services.TryAddScoped(serviceType);
                     break;
-                case FeignClientScope.Transient:
+                case FeignClientLifetime.Transient:
                     Services.TryAddTransient(serviceType);
                     break;
                 default:
@@ -68,9 +66,19 @@ namespace Feign.DependencyInjection
             Services.AddSingleton<TService>(service);
         }
 
-        public bool IsRegister(Type serviceType)
+        public bool HasService(Type serviceType)
         {
             return Services.Any(a => a.ServiceType == serviceType);
         }
+
+        public void RemoveService(Type serviceType)
+        {
+            var service = Services.FirstOrDefault(a => a.ServiceType == serviceType);
+            if (service != null)
+            {
+                Services.Remove(service);
+            }
+        }
+
     }
 }

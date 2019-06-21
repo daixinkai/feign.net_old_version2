@@ -16,8 +16,6 @@ namespace Feign.Autofac
             TypeBuilder = new FeignClientTypeBuilder();
         }
 
-        public ConverterCollection Converters { get { return Options?.Converters; } }
-
         public FeignOptions Options { get; set; }
 
         public ContainerBuilder ContainerBuilder { get; set; }
@@ -26,36 +24,36 @@ namespace Feign.Autofac
 
         IFeignOptions IFeignBuilder.Options => Options;
 
-        public void AddService(Type serviceType, Type implType, FeignClientScope scope)
+        public void AddService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {
             var registerBuilder = ContainerBuilder.RegisterType(implType).As(serviceType);
-            switch (scope)
+            switch (lifetime)
             {
-                case FeignClientScope.Singleton:
+                case FeignClientLifetime.Singleton:
                     registerBuilder.SingleInstance();
                     break;
-                case FeignClientScope.Scoped:
+                case FeignClientLifetime.Scoped:
                     registerBuilder.InstancePerLifetimeScope();
                     break;
-                case FeignClientScope.Transient:
+                case FeignClientLifetime.Transient:
                     registerBuilder.InstancePerDependency();
                     break;
                 default:
                     break;
             }
         }
-        public void AddService(Type serviceType, FeignClientScope scope)
+        public void AddService(Type serviceType, FeignClientLifetime lifetime)
         {
             var registerBuilder = ContainerBuilder.RegisterType(serviceType);
-            switch (scope)
+            switch (lifetime)
             {
-                case FeignClientScope.Singleton:
+                case FeignClientLifetime.Singleton:
                     registerBuilder.SingleInstance();
                     break;
-                case FeignClientScope.Scoped:
+                case FeignClientLifetime.Scoped:
                     registerBuilder.InstancePerLifetimeScope();
                     break;
-                case FeignClientScope.Transient:
+                case FeignClientLifetime.Transient:
                     registerBuilder.InstancePerDependency();
                     break;
                 default:
@@ -67,14 +65,14 @@ namespace Feign.Autofac
             ContainerBuilder.RegisterInstance(service).As<TService>();
         }
 
-        public bool IsRegister(Type serviceType)
+        public bool HasService(Type serviceType)
         {
-            throw new NotSupportedException();
-            //IContainer container = ContainerBuilder.Build();
-            //using (container)
-            //{
-            //    return container.IsRegistered(serviceType);
-            //}
+            return false;
+        }
+
+        public void RemoveService(Type serviceType)
+        {
+
         }
 
     }
