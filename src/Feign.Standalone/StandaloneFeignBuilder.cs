@@ -19,7 +19,7 @@ namespace Feign.Standalone
 
         public FeignOptions Options { get; set; }
 
-        public FeignClientTypeBuilder TypeBuilder { get; }
+        public IFeignClientTypeBuilder TypeBuilder { get; }
 
         public ServiceCollection Services { get; }
 

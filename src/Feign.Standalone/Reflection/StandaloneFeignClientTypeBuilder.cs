@@ -12,7 +12,7 @@ namespace Feign.Standalone.Reflection
 {
     class StandaloneFeignClientTypeBuilder : FeignClientTypeBuilder
     {
-        public override Type GetParentType(Type parentType)
+        protected override Type GetParentType(Type parentType)
         {
             if (typeof(FallbackFactoryFeignClientProxyService<,>) == parentType.GetGenericTypeDefinition())
             {
