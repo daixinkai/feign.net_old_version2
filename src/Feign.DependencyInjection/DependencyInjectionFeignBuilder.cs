@@ -66,12 +66,23 @@ namespace Feign.DependencyInjection
             Services.AddSingleton<TService>(service);
         }
 
-        public bool HasService(Type serviceType)
+        public void AddOrUpdateService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {
-            return Services.Any(a => a.ServiceType == serviceType);
+            RemoveService(serviceType);
+            AddService(serviceType, implType, lifetime);
+        }
+        public void AddOrUpdateService(Type serviceType, FeignClientLifetime lifetime)
+        {
+            RemoveService(serviceType);
+            AddService(serviceType, lifetime);
+        }
+        public void AddOrUpdateService<TService>(TService service) where TService : class
+        {
+            RemoveService(typeof(TService));
+            AddService(service);
         }
 
-        public void RemoveService(Type serviceType)
+        void RemoveService(Type serviceType)
         {
             var service = Services.FirstOrDefault(a => a.ServiceType == serviceType);
             if (service != null)

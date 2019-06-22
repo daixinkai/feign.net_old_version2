@@ -17,10 +17,10 @@ namespace Feign.Tests.NET45
         public void TestMethod1()
         {
             DynamicAssembly dynamicAssembly = new DynamicAssembly();
+            dynamicAssembly.DEBUG_MODE = true;
             FeignClientTypeBuilder feignClientTypeBuilder = new FeignClientTypeBuilder(dynamicAssembly);
             feignClientTypeBuilder.BuildType(typeof(ITestService)); ;
             feignClientTypeBuilder.Save();
-
         }
 
         [TestMethod]

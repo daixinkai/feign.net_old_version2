@@ -34,29 +34,9 @@ namespace Autofac
             {
                 options = new FeignOptions();
             }
-
-
             AutofacFeignBuilder feignBuilder = new AutofacFeignBuilder();
-
             feignBuilder.ContainerBuilder = containerBuilder;
-            feignBuilder.Options = options;
-            feignBuilder.AddServiceCacheProvider<DefaultServiceCacheProvider>();
-            feignBuilder.AddServiceDiscovery<DefaultServiceDiscovery>();
-            feignBuilder.AddLoggerFactory<DefaultLoggerFactory>();
-
-            if (options.Assemblies.Count == 0)
-            {
-                feignBuilder.AddFeignClients(Assembly.GetEntryAssembly(), options.Lifetime);
-            }
-            else
-            {
-                foreach (var assembly in options.Assemblies)
-                {
-                    feignBuilder.AddFeignClients(assembly, options.Lifetime);
-                }
-            }
-            feignBuilder.AddService<IFeignOptions>(options);
-            feignBuilder.TypeBuilder.FinishBuild();
+            feignBuilder.AddFeignClients(options);
             return feignBuilder;
         }
 

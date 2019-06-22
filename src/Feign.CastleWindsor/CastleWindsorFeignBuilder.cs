@@ -40,13 +40,29 @@ namespace Feign.CastleWindsor
             WindsorContainer.Register(registration);
         }
 
-        public bool HasService(Type serviceType)
+        public void AddOrUpdateService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {
-            return WindsorContainer.Kernel.HasComponent(serviceType);
+            RemoveService(serviceType);
+            AddService(serviceType, implType, lifetime);
+        }
+        public void AddOrUpdateService(Type serviceType, FeignClientLifetime lifetime)
+        {
+            RemoveService(serviceType);
+            AddService(serviceType, lifetime);
+        }
+        public void AddOrUpdateService<TService>(TService service) where TService : class
+        {
+            RemoveService(typeof(TService));
+            AddService(service);
         }
 
-        public void RemoveService(Type serviceType)
+
+        void RemoveService(Type serviceType)
         {
+            if (!WindsorContainer.Kernel.HasComponent(serviceType))
+            {
+                return;
+            }
             WindsorContainer.Kernel.RemoveComponent(serviceType);
         }
 

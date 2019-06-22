@@ -39,25 +39,12 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             DependencyInjectionFeignBuilder feignBuilder = new DependencyInjectionFeignBuilder();
-
             feignBuilder.Services = services;
             feignBuilder.Options = options;
-
-            if (options.Assemblies.Count == 0)
-            {
-                feignBuilder.AddFeignClients(Assembly.GetEntryAssembly(), options.Lifetime);
-            }
-            else
-            {
-                foreach (var assembly in options.Assemblies)
-                {
-                    feignBuilder.AddFeignClients(assembly, options.Lifetime);
-                }
-            }
-            feignBuilder.AddService(typeof(ILoggerFactory), typeof(LoggerFactory), FeignClientLifetime.Singleton);
-            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(ServiceCacheProvider), FeignClientLifetime.Singleton);
-            feignBuilder.AddService<IFeignOptions>(options);
-            feignBuilder.TypeBuilder.FinishBuild();
+            feignBuilder.AddFeignClients(options)
+                .AddLoggerFactory<LoggerFactory>()
+                .AddServiceCacheProvider<ServiceCacheProvider>()
+                ;
             return feignBuilder;
         }
 

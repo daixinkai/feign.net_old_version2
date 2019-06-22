@@ -44,24 +44,7 @@ namespace Castle.Windsor
 
             feignBuilder.WindsorContainer = windsorContainer;
             feignBuilder.Options = options;
-            if (options.Assemblies.Count == 0)
-            {
-                feignBuilder.AddFeignClients(Assembly.GetEntryAssembly(), options.Lifetime);
-            }
-            else
-            {
-                foreach (var assembly in options.Assemblies)
-                {
-                    feignBuilder.AddFeignClients(assembly, options.Lifetime);
-                }
-            }
-            feignBuilder.AddService<IFeignOptions>(options);
-
-            feignBuilder.AddServiceCacheProvider<DefaultServiceCacheProvider>();
-            feignBuilder.AddServiceDiscovery<DefaultServiceDiscovery>();
-            feignBuilder.AddLoggerFactory<DefaultLoggerFactory>();
-
-            feignBuilder.TypeBuilder.FinishBuild();
+            feignBuilder.AddFeignClients(options);
             return feignBuilder;
         }
 

@@ -15,6 +15,28 @@ namespace Feign
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class FeignBuilderExtensions
     {
+
+        public static TFeignBuilder AddFeignClients<TFeignBuilder>(this TFeignBuilder feignBuilder, FeignOptions options) where TFeignBuilder : IFeignBuilder
+        {
+            if (options.Assemblies.Count == 0)
+            {
+                feignBuilder.AddFeignClients(Assembly.GetEntryAssembly(), options.Lifetime);
+            }
+            else
+            {
+                foreach (var assembly in options.Assemblies)
+                {
+                    feignBuilder.AddFeignClients(assembly, options.Lifetime);
+                }
+            }
+            feignBuilder.AddLoggerFactory<DefaultLoggerFactory>();
+            feignBuilder.AddServiceCacheProvider<DefaultServiceCacheProvider>();
+            feignBuilder.AddServiceDiscovery<DefaultServiceDiscovery>();
+            feignBuilder.AddService<IFeignOptions>(options);
+            feignBuilder.TypeBuilder.FinishBuild();
+            return feignBuilder;
+        }
+
         public static IFeignBuilder AddConverter<TSource, TResult>(this IFeignBuilder feignBuilder, IConverter<TSource, TResult> converter)
         {
             feignBuilder.Options.Converters.AddConverter(converter);
@@ -52,32 +74,20 @@ namespace Feign
 
         public static IFeignBuilder AddLoggerFactory<TLoggerFactory>(this IFeignBuilder feignBuilder) where TLoggerFactory : ILoggerFactory
         {
-            if (feignBuilder.HasService(typeof(ILoggerFactory)))
-            {
-                feignBuilder.RemoveService(typeof(ILoggerFactory));
-            }
-            feignBuilder.AddService(typeof(ILoggerFactory), typeof(TLoggerFactory), FeignClientLifetime.Singleton);
+            feignBuilder.AddOrUpdateService(typeof(ILoggerFactory), typeof(TLoggerFactory), FeignClientLifetime.Singleton);
             return feignBuilder;
         }
 
 
         public static IFeignBuilder AddServiceDiscovery<TServiceDiscovery>(this IFeignBuilder feignBuilder) where TServiceDiscovery : IServiceDiscovery
         {
-            if (feignBuilder.HasService(typeof(IServiceDiscovery)))
-            {
-                feignBuilder.RemoveService(typeof(IServiceDiscovery));
-            }
-            feignBuilder.AddService(typeof(IServiceDiscovery), typeof(TServiceDiscovery), FeignClientLifetime.Singleton);
+            feignBuilder.AddOrUpdateService(typeof(IServiceDiscovery), typeof(TServiceDiscovery), FeignClientLifetime.Singleton);
             return feignBuilder;
         }
 
         public static IFeignBuilder AddServiceCacheProvider<TServiceCacheProvider>(this IFeignBuilder feignBuilder) where TServiceCacheProvider : IServiceCacheProvider
         {
-            if (feignBuilder.HasService(typeof(IServiceCacheProvider)))
-            {
-                feignBuilder.RemoveService(typeof(IServiceCacheProvider));
-            }
-            feignBuilder.AddService(typeof(IServiceCacheProvider), typeof(TServiceCacheProvider), FeignClientLifetime.Singleton);
+            feignBuilder.AddOrUpdateService(typeof(IServiceCacheProvider), typeof(TServiceCacheProvider), FeignClientLifetime.Singleton);
             return feignBuilder;
         }
 

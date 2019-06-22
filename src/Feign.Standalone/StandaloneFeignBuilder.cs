@@ -59,14 +59,17 @@ namespace Feign.Standalone
             Services.AddOrUpdate(new ServiceDescriptor(typeof(TService), service));
         }
 
-        public bool HasService(Type serviceType)
+        public void AddOrUpdateService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {
-            return Services.Get(serviceType) != null;
+            Services.AddOrUpdate(new ServiceDescriptor(serviceType, implType, lifetime));
         }
-
-        public void RemoveService(Type serviceType)
+        public void AddOrUpdateService(Type serviceType, FeignClientLifetime lifetime)
         {
-            Services.Remove(serviceType);
+            Services.AddOrUpdate(new ServiceDescriptor(serviceType, serviceType, lifetime));
+        }
+        public void AddOrUpdateService<TService>(TService service) where TService : class
+        {
+            Services.AddOrUpdate(new ServiceDescriptor(typeof(TService), service));
         }
 
     }

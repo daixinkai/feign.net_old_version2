@@ -65,14 +65,17 @@ namespace Feign.Autofac
             ContainerBuilder.RegisterInstance(service).As<TService>();
         }
 
-        public bool HasService(Type serviceType)
+        public void AddOrUpdateService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {
-            return false;
+            AddService(serviceType, implType, lifetime);
         }
-
-        public void RemoveService(Type serviceType)
+        public void AddOrUpdateService(Type serviceType, FeignClientLifetime lifetime)
         {
-
+            AddService(serviceType, lifetime);
+        }
+        public void AddOrUpdateService<TService>(TService service) where TService : class
+        {
+            AddService(service);
         }
 
     }

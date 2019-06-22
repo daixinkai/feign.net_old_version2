@@ -404,12 +404,15 @@ namespace Feign.Proxy
             }
             #endregion
             EnsureSuccess(responseMessage);
+            if (typeof(TResult) == typeof(Task))
+            {
 #if NET45
-            return (TResult)(object)Task.FromResult<object>(null);
+                return (TResult)(object)Task.FromResult<object>(null);
 #endif
 #if NETSTANDARD
-            return (TResult)(object)Task.CompletedTask;
+                return (TResult)(object)Task.CompletedTask;
 #endif
+            }
             string text = await responseMessage.Content.ReadAsStringAsync();
             if (typeof(TResult) == typeof(string))
             {
