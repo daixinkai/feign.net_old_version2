@@ -133,7 +133,14 @@ namespace Feign.Reflection
             //{
             MethodBuilder propertyGet = typeBuilder.DefineMethod("get_" + propertyName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Virtual, typeof(string), Type.EmptyTypes);
             ILGenerator iLGenerator = propertyGet.GetILGenerator();
-            iLGenerator.Emit(OpCodes.Ldstr, propertyValue);
+            if (propertyValue==null)
+            {
+                iLGenerator.Emit(OpCodes.Ldnull);
+            }
+            else
+            {
+                iLGenerator.Emit(OpCodes.Ldstr, propertyValue);
+            }
             iLGenerator.Emit(OpCodes.Ret);
             propertyBuilder.SetGetMethod(propertyGet);
             //}
@@ -155,7 +162,7 @@ namespace Feign.Reflection
 
         void BuildBaseUriProperty(TypeBuilder typeBuilder, Type interfaceType)
         {
-            BuildReadOnlyProperty(typeBuilder, interfaceType, "BaseUri", interfaceType.GetCustomAttribute<RequestMappingAttribute>().Value);
+            BuildReadOnlyProperty(typeBuilder, interfaceType, "BaseUri", interfaceType.GetCustomAttribute<RequestMappingAttribute>()?.Value);
         }
 
         void BuildUrlProperty(TypeBuilder typeBuilder, Type interfaceType)
