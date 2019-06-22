@@ -4,9 +4,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Dai.Feign.DependencyInjection</PackageId>
     <Authors>daixinkai</Authors>
-    <AssemblyVersion>1.1.0.1</AssemblyVersion>
-    <FileVersion>1.1.0.1</FileVersion>
-    <Version>1.1.0.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
+    <Version>1.1.1</Version>
     <Description>feign for Microsoft.Extensions.DependencyInjection</Description>
     <PackageProjectUrl>https://github.com/daixinkai/feign.net</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

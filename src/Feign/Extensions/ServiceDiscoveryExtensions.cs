@@ -23,7 +23,7 @@ namespace Feign
             }
 
             // cache not found or instances not found, call out to the provider
-            var instances = serviceDiscovery.GetServiceInstances(serviceId);
+            var instances = serviceDiscovery.GetServiceInstances(serviceId) ?? new List<IServiceInstance>();
             if (serviceCacheProvider != null)
             {
                 await serviceCacheProvider.SetAsync(serviceInstancesKeyPrefix + serviceId, instances, TimeSpan.FromMinutes(10));
@@ -38,7 +38,7 @@ namespace Feign
             if (serviceCacheProvider != null)
             {
                 // check the cache for existing service instances
-                var services =  serviceCacheProvider.Get(serviceInstancesKeyPrefix + serviceId);
+                var services = serviceCacheProvider.Get(serviceInstancesKeyPrefix + serviceId);
                 if (services != null && services.Count > 0)
                 {
                     return services;
@@ -46,10 +46,10 @@ namespace Feign
             }
 
             // cache not found or instances not found, call out to the provider
-            var instances = serviceDiscovery.GetServiceInstances(serviceId);
+            var instances = serviceDiscovery.GetServiceInstances(serviceId) ?? new List<IServiceInstance>();
             if (serviceCacheProvider != null)
             {
-                 serviceCacheProvider.Set(serviceInstancesKeyPrefix + serviceId, instances, TimeSpan.FromMinutes(10));
+                serviceCacheProvider.Set(serviceInstancesKeyPrefix + serviceId, instances, TimeSpan.FromMinutes(10));
             }
 
             return instances;

@@ -7,6 +7,10 @@ namespace Feign
     {
         public FeignClientAttribute(string name)
         {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
             Name = name;
         }
         public virtual string Name { get; set; }

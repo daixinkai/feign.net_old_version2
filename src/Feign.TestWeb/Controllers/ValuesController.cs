@@ -21,8 +21,10 @@ namespace Feign.TestWeb.Controllers
 
         // GET api/values/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<object>> Get(int id, [FromServices] ITestService testService)
+        public async Task<ActionResult<object>> Get(int id, [FromServices] ITestService testService, [FromServices] ITestService1 testService1)
         {
+
+            string html = await testService1.GetHtml();
 
             //var rrr = typeof(Func<Task>).GetConstructors(System.Reflection.BindingFlags.Default);
 
