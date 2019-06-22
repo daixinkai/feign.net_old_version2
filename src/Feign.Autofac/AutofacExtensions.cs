@@ -21,14 +21,14 @@ namespace Autofac
             return AddFeignClients(containerBuilder, (FeignOptions)null);
         }
 
-        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder, Action<FeignOptions> setupAction)
+        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder, Action<IFeignOptions> setupAction)
         {
             FeignOptions options = new FeignOptions();
             setupAction?.Invoke(options);
             return AddFeignClients(containerBuilder, options);
         }
 
-        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder, FeignOptions options)
+        public static IAutofacFeignBuilder AddFeignClients(this ContainerBuilder containerBuilder, IFeignOptions options)
         {
             if (options == null)
             {

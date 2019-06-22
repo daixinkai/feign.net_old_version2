@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Reflection
 {
-    public class FeignClientTypeBuilder
+    public class FeignClientTypeBuilder : IFeignClientTypeBuilder
     {
         public FeignClientTypeBuilder() : this(new DynamicAssembly())
         {
@@ -38,12 +38,13 @@ namespace Feign.Reflection
 
         DynamicAssembly _dynamicAssembly;
 
-        public Type BuildType(Type interfaceType)
+        public Type BuildType(Type serviceType)
         {
-            if (!NeedBuildType(interfaceType))
+            if (!NeedBuildType(serviceType))
             {
                 return null;
             }
+            Type interfaceType = serviceType;
             FeignClientAttribute feignClientAttribute = interfaceType.GetCustomAttribute<FeignClientAttribute>();
 
             IMethodBuilder methodBuilder;
@@ -86,12 +87,12 @@ namespace Feign.Reflection
             return type;
         }
 
-        public virtual Type GetParentType(Type parentType)
+        protected virtual Type GetParentType(Type parentType)
         {
             return parentType;
         }
 
-        public virtual ConstructorInfo GetConstructor(Type parentType)
+        protected virtual ConstructorInfo GetConstructor(Type parentType)
         {
             return parentType.GetConstructors()[0];
         }

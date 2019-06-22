@@ -16,7 +16,7 @@ namespace Feign
     public static class FeignBuilderExtensions
     {
 
-        public static TFeignBuilder AddFeignClients<TFeignBuilder>(this TFeignBuilder feignBuilder, FeignOptions options) where TFeignBuilder : IFeignBuilder
+        public static TFeignBuilder AddFeignClients<TFeignBuilder>(this TFeignBuilder feignBuilder, IFeignOptions options) where TFeignBuilder : IFeignBuilder
         {
             if (options.Assemblies.Count == 0)
             {

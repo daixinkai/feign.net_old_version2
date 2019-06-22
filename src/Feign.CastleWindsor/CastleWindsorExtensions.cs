@@ -26,14 +26,14 @@ namespace Castle.Windsor
             return AddFeignClients(windsorContainer, (FeignOptions)null);
         }
 
-        public static ICastleWindsorFeignBuilder AddFeignClients(this IWindsorContainer windsorContainer, Action<FeignOptions> setupAction)
+        public static ICastleWindsorFeignBuilder AddFeignClients(this IWindsorContainer windsorContainer, Action<IFeignOptions> setupAction)
         {
             FeignOptions options = new FeignOptions();
             setupAction?.Invoke(options);
             return AddFeignClients(windsorContainer, options);
         }
 
-        public static ICastleWindsorFeignBuilder AddFeignClients(this IWindsorContainer windsorContainer, FeignOptions options)
+        public static ICastleWindsorFeignBuilder AddFeignClients(this IWindsorContainer windsorContainer, IFeignOptions options)
         {
             if (options == null)
             {

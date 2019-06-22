@@ -16,13 +16,11 @@ namespace Feign.CastleWindsor
             TypeBuilder = new FeignClientTypeBuilder();
         }
 
-        public FeignOptions Options { get; set; }
+        public IFeignOptions Options { get; set; }
 
         public IWindsorContainer WindsorContainer { get; set; }
 
-        public FeignClientTypeBuilder TypeBuilder { get; }
-
-        IFeignOptions IFeignBuilder.Options => Options;
+        public IFeignClientTypeBuilder TypeBuilder { get; }
 
         public void AddService(Type serviceType, Type implType, FeignClientLifetime lifetime)
         {

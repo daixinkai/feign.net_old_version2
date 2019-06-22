@@ -9,7 +9,7 @@ namespace Feign
     public interface IFeignBuilder
     {
         IFeignOptions Options { get; }
-        FeignClientTypeBuilder TypeBuilder { get; }
+        IFeignClientTypeBuilder TypeBuilder { get; }
 
         void AddService(Type serviceType, Type implType, FeignClientLifetime lifetime);
         void AddService(Type serviceType, FeignClientLifetime lifetime);

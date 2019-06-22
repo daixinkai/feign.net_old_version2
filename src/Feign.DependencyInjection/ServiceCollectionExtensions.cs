@@ -24,14 +24,14 @@ namespace Microsoft.Extensions.DependencyInjection
             return AddFeignClients(services, (FeignOptions)null);
         }
 
-        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services, Action<FeignOptions> setupAction)
+        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services, Action<IFeignOptions> setupAction)
         {
             FeignOptions options = new FeignOptions();
             setupAction?.Invoke(options);
             return AddFeignClients(services, options);
         }
 
-        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services, FeignOptions options)
+        public static IDependencyInjectionFeignBuilder AddFeignClients(this IServiceCollection services, IFeignOptions options)
         {
             if (options == null)
             {
