@@ -13,11 +13,12 @@ namespace Feign.Proxy
     public abstract class FallbackFeignClientProxyService<TService, TFallback> : FallbackFeignClientProxyService, IFallbackFeignClient<TService>
       where TFallback : TService
     {
-        public FallbackFeignClientProxyService(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, TFallback fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory)
+        public FallbackFeignClientProxyService(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, TFallback fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory, fallback)
         {
             Fallback = fallback;
         }
         public virtual TService Fallback { get; }
+
     }
 
 }

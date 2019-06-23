@@ -12,5 +12,7 @@ namespace Feign
         event EventHandler<CancelRequestEventArgs> CancelRequest;
         event EventHandler<ErrorRequestEventArgs> ErrorRequest;
         event EventHandler<ReceivingResponseEventArgs> ReceivingResponse;
+        event EventHandler<InitializingEventArgs> Initializing;
+        event EventHandler<DisposingEventArgs> Disposing;
     }
 }

@@ -12,6 +12,8 @@ namespace Feign
         public event EventHandler<CancelRequestEventArgs> CancelRequest;
         public event EventHandler<ErrorRequestEventArgs> ErrorRequest;
         public event EventHandler<ReceivingResponseEventArgs> ReceivingResponse;
+        public event EventHandler<InitializingEventArgs> Initializing;
+        public event EventHandler<DisposingEventArgs> Disposing;
 
         protected internal virtual void OnBuildingRequest(object sender, BuildingRequestEventArgs e)
         {
@@ -52,6 +54,23 @@ namespace Feign
                 return;
             }
             ReceivingResponse?.Invoke(sender, e);
+        }
+        protected internal virtual void OnInitializing(object sender, InitializingEventArgs e)
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+            Initializing?.Invoke(sender, e);
+        }
+
+        protected internal virtual void OnDisposing(object sender, DisposingEventArgs e)
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+            Disposing?.Invoke(sender, e);
         }
 
     }

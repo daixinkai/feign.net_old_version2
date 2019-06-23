@@ -80,6 +80,14 @@ namespace Feign.Tests
         public static void AddTestFeignClients(this IFeignBuilder feignBuilder)
         {
             feignBuilder.AddFeignClients(Assembly.GetExecutingAssembly(), FeignClientLifetime.Singleton);
+            feignBuilder.Options.FeignClientPipeline.Initializing += (sender, e) =>
+            {
+
+            };
+            feignBuilder.Options.FeignClientPipeline.Disposing += (sender, e) =>
+            {
+
+            };
             feignBuilder.Options.FeignClientPipeline.Authorization(proxy =>
             {
 #if NETSTANDARD
@@ -91,10 +99,15 @@ namespace Feign.Tests
             //feignBuilder.Options.FeignClientPipeline.BuildingRequest += FeignClientPipeline_BuildingRequest;
             feignBuilder.Options.FeignClientPipeline.Service("yun-platform-service-provider").BuildingRequest += (sender, e) =>
             {
-
-                IFallbackFeignClient<object> fallbackFeignClient = e.FeignClient as IFallbackFeignClient<object>;
+                IFallbackFeignClient fallbackFeignClient = e.FeignClient.AsFallback();
+                fallbackFeignClient = e.FeignClient.AsFallback<object>();
+                fallbackFeignClient = e.FeignClient.AsFallback<ITestService>();
 
                 var fallback = fallbackFeignClient?.Fallback;
+
+                fallback = e.FeignClient.GetFallback();
+                fallback = e.FeignClient.GetFallback<object>();
+                fallback = e.FeignClient.GetFallback<ITestService>();
 
                 if (!e.Headers.ContainsKey("Authorization"))
                 {
@@ -136,7 +149,7 @@ namespace Feign.Tests
 
         private static void FeignClientPipeline_SendingRequest(object sender, SendingRequestEventArgs e)
         {
-
+            e.SuspendRequest();
         }
 
     }

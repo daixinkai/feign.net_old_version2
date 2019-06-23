@@ -1,4 +1,5 @@
 ﻿using Feign.Cache;
+using Feign.Internal;
 using Feign.Logging;
 using System;
 using System.Collections.Generic;
@@ -69,6 +70,10 @@ namespace Feign.Discovery
                 SendingRequestEventArgs sendingArgs = new SendingRequestEventArgs(_feignClient, request);
                 serviceFeignClientPipeline?.OnSendingRequest(_feignClient, sendingArgs);
                 _globalFeignClientPipeline?.OnSendingRequest(_feignClient, sendingArgs);
+                if (sendingArgs.IsSuspendRequest)
+                {
+                    throw new SuspendedRequestException();
+                }
                 request = sendingArgs.RequestMessage;
                 if (request == null)
                 {

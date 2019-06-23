@@ -20,7 +20,7 @@ namespace Feign.Proxy
             _feignOptions = feignOptions;
             //_logger = loggerFactory?.CreateLogger(this.GetType());
             _logger = loggerFactory?.CreateLogger(typeof(FeignClientProxyService));
-            _globalFeignClientPipeline = _feignOptions?.FeignClientPipeline as GlobalFeignClientPipelineBuilder; ;
+            _globalFeignClientPipeline = _feignOptions?.FeignClientPipeline as GlobalFeignClientPipelineBuilder;
             ServiceDiscoveryHttpClientHandler serviceDiscoveryHttpClientHandler = new ServiceDiscoveryHttpClientHandler(serviceDiscovery, this, _globalFeignClientPipeline, serviceCacheProvider, _logger);
             serviceDiscoveryHttpClientHandler.ShouldResolveService = string.IsNullOrWhiteSpace(Url);
             serviceDiscoveryHttpClientHandler.AllowAutoRedirect = false;
@@ -51,12 +51,25 @@ namespace Feign.Proxy
                 baseUrl = baseUrl.TrimEnd('/');
             }
             _baseUrl = baseUrl;
+
+            InitializingEventArgs initializingEventArgs = new InitializingEventArgs(this);
+            initializingEventArgs.HttpClient = _httpClient;
+            _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnInitializing(this, initializingEventArgs);
+            _globalFeignClientPipeline?.OnInitializing(this, initializingEventArgs);
+
+            _httpClient = initializingEventArgs.HttpClient;
+
+            if (_httpClient == null)
+            {
+                throw new ArgumentNullException(nameof(_httpClient));
+            }
+
         }
 
 
         public abstract string ServiceId { get; }
 
-
+        protected virtual bool IsResponseSuspendedRequest => true;
 
 
         public virtual string BaseUri { get { return null; } }
@@ -302,12 +315,20 @@ namespace Feign.Proxy
             {
                 return action();
             }
+            catch (SuspendedRequestException)
+            {
+                if (IsResponseSuspendedRequest)
+                {
+                    return null;
+                }
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Exception during SendAsync()");
                 #region ErrorRequest
                 ErrorRequestEventArgs errorArgs = new ErrorRequestEventArgs(this, ex);
-                _globalFeignClientPipeline.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
+                _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
                 if (!errorArgs.ExceptionHandled)
                 {
                     _globalFeignClientPipeline?.OnErrorRequest(this, errorArgs);
@@ -327,11 +348,19 @@ namespace Feign.Proxy
             {
                 return await action();
             }
+            catch (SuspendedRequestException)
+            {
+                if (IsResponseSuspendedRequest)
+                {
+                    return null;
+                }
+                throw;
+            }
             catch (Exception ex)
             {
                 #region ErrorRequest
                 ErrorRequestEventArgs errorArgs = new ErrorRequestEventArgs(this, ex);
-                _globalFeignClientPipeline.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
+                _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
                 if (!errorArgs.ExceptionHandled)
                 {
                     _globalFeignClientPipeline?.OnErrorRequest(this, errorArgs);
@@ -432,6 +461,9 @@ namespace Feign.Proxy
         {
             if (!disposedValue)
             {
+                DisposingEventArgs disposingEventArgs = new DisposingEventArgs(this, disposing);
+                _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnDisposing(this, disposingEventArgs);
+                _globalFeignClientPipeline?.OnDisposing(this, disposingEventArgs);
                 if (disposing)
                 {
                     // TODO: 释放托管状态(托管对象)。

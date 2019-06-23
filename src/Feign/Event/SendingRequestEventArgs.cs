@@ -12,5 +12,15 @@ namespace Feign
             RequestMessage = requestMessage;
         }
         public HttpRequestMessage RequestMessage { get; }
+
+        public bool IsSuspendRequest => _isSuspendRequest;
+
+        bool _isSuspendRequest;
+
+        public void SuspendRequest()
+        {
+            _isSuspendRequest = true;
+        }
+
     }
 }

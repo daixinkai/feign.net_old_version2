@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace Feign.Fallback
 {
-    public interface IFallbackFeignClient<out T> : IFeignClient
+    public interface IFallbackFeignClient : IFeignClient
     {
-        T Fallback { get; }
+        object Fallback { get; }
+    }
+    public interface IFallbackFeignClient<out T> : IFallbackFeignClient
+    {
+        new T Fallback { get; }
     }
 }

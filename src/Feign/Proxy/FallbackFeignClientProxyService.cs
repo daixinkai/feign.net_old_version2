@@ -1,5 +1,6 @@
 ﻿using Feign.Cache;
 using Feign.Discovery;
+using Feign.Fallback;
 using Feign.Internal;
 using Feign.Logging;
 using System;
@@ -12,13 +13,22 @@ using System.Threading.Tasks;
 
 namespace Feign.Proxy
 {
-    public abstract class FallbackFeignClientProxyService : FeignClientProxyService
+    public abstract class FallbackFeignClientProxyService : FeignClientProxyService, IFallbackFeignClient
     {
-        public FallbackFeignClientProxyService(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory)
+        public FallbackFeignClientProxyService(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, object fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory)
         {
+            _fallback = fallback;
         }
+
+        object _fallback;
+
+        object IFallbackFeignClient.Fallback => _fallback;
+
+        protected override bool IsResponseSuspendedRequest => false;
+
         #region HttpMethod
 
+        #region define
         #region get
         internal static readonly MethodInfo HTTP_GET_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Get");
         internal static readonly MethodInfo HTTP_GET_ASYNC_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "GetAsync");
@@ -51,68 +61,25 @@ namespace Feign.Proxy
         internal static readonly MethodInfo HTTP_DELETE_ASYNC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "DeleteAsync");
         #endregion
 
+        #endregion
+
+
         #region get
         protected virtual TResult Get<TResult>(string uri, Func<TResult> fallback)
         {
-            try
-            {
-                return Get<TResult>(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return fallback.Invoke();
-                }
-                throw;
-            }
+            return Invoke(() => Get<TResult>(uri), fallback);
         }
         protected virtual void Get(string uri, Action fallback)
         {
-            try
-            {
-                Get(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            Invoke(() => Get(uri), fallback);
         }
-        protected virtual async Task<TResult> GetAsync<TResult>(string uri, Func<Task<TResult>> fallback)
+        protected virtual Task<TResult> GetAsync<TResult>(string uri, Func<Task<TResult>> fallback)
         {
-            try
-            {
-                return await GetAsync<TResult>(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return await fallback.Invoke();
-                }
-                throw;
-            }
+            return InvokeAsync(() => GetAsync<TResult>(uri), fallback);
         }
-        protected virtual async Task GetAsync(string uri, Func<Task> fallback)
+        protected virtual Task GetAsync(string uri, Func<Task> fallback)
         {
-            try
-            {
-                await GetAsync(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    await fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            return InvokeAsync(() => GetAsync(uri), fallback);
         }
 
         #endregion
@@ -120,201 +87,142 @@ namespace Feign.Proxy
         #region post
         protected virtual TResult Post<TResult>(string uri, object value, Func<TResult> fallback)
         {
-            try
-            {
-                return Post<TResult>(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return fallback.Invoke();
-                }
-                throw;
-            }
+            return Invoke(() => Post<TResult>(uri, value), fallback);
         }
 
         protected virtual void Post(string uri, object value, Action fallback)
         {
-            try
-            {
-                Post(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            Invoke(() => Post(uri, value), fallback);
         }
 
-        protected virtual async Task<TResult> PostAsync<TResult>(string uri, object value, Func<Task<TResult>> fallback)
+        protected virtual Task<TResult> PostAsync<TResult>(string uri, object value, Func<Task<TResult>> fallback)
         {
-            try
-            {
-                return await PostAsync<TResult>(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return await fallback.Invoke();
-                }
-                throw;
-            }
+            return InvokeAsync(() => PostAsync<TResult>(uri, value), fallback);
         }
-        protected virtual async Task PostAsync(string uri, object value, Func<Task> fallback)
+        protected virtual Task PostAsync(string uri, object value, Func<Task> fallback)
         {
-            try
-            {
-                await PostAsync(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    await fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            return InvokeAsync(() => PostAsync(uri, value), fallback);
         }
         #endregion
 
         #region put
         protected virtual TResult Put<TResult>(string uri, object value, Func<TResult> fallback)
         {
-            try
-            {
-                return Put<TResult>(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return fallback.Invoke();
-                }
-                throw;
-            }
+            return Invoke(() => Put<TResult>(uri, value), fallback);
         }
+
         protected virtual void Put(string uri, object value, Action fallback)
         {
-            try
-            {
-                Put(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            Invoke(() => Put(uri, value), fallback);
         }
-        protected virtual async Task<TResult> PutAsync<TResult>(string uri, object value, Func<Task<TResult>> fallback)
+
+        protected virtual Task<TResult> PutAsync<TResult>(string uri, object value, Func<Task<TResult>> fallback)
         {
-            try
-            {
-                return await PutAsync<TResult>(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return await fallback.Invoke();
-                }
-                throw;
-            }
+            return InvokeAsync(() => PutAsync<TResult>(uri, value), fallback);
         }
-        protected virtual async Task PutAsync(string uri, object value, Func<Task> fallback)
+        protected virtual Task PutAsync(string uri, object value, Func<Task> fallback)
         {
-            try
-            {
-                await PutAsync(uri, value);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    await fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            return InvokeAsync(() => PutAsync(uri, value), fallback);
         }
         #endregion
 
         #region delete
         protected virtual TResult Delete<TResult>(string uri, Func<TResult> fallback)
         {
-            try
-            {
-                return Delete<TResult>(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return fallback.Invoke();
-                }
-                throw;
-            }
+            return Invoke(() => Delete<TResult>(uri), fallback);
         }
         protected virtual void Delete(string uri, Action fallback)
         {
-            try
-            {
-                Delete(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            Invoke(() => Delete(uri), fallback);
         }
-        protected virtual async Task<TResult> DeleteAsync<TResult>(string uri, Func<Task<TResult>> fallback)
+        protected virtual Task<TResult> DeleteAsync<TResult>(string uri, Func<Task<TResult>> fallback)
         {
-            try
-            {
-                return await DeleteAsync<TResult>(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    return await fallback.Invoke();
-                }
-                throw;
-            }
+            return InvokeAsync(() => DeleteAsync<TResult>(uri), fallback);
         }
-        protected virtual async Task DeleteAsync(string uri, Func<Task> fallback)
+        protected virtual Task DeleteAsync(string uri, Func<Task> fallback)
         {
-            try
-            {
-                await DeleteAsync(uri);
-            }
-            catch (Exception)
-            {
-                if (fallback != null)
-                {
-                    await fallback.Invoke();
-                    return;
-                }
-                throw;
-            }
+            return InvokeAsync(() => DeleteAsync(uri), fallback);
         }
         #endregion
 
+        void Invoke(Action action, Action fallback)
+        {
+            try
+            {
+                action();
+            }
+            catch (SuspendedRequestException)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (fallback == null)
+                {
+                    throw;
+                }
+                fallback.Invoke();
+            }
+        }
+        TResult Invoke<TResult>(Func<TResult> action, Func<TResult> fallback)
+        {
+            try
+            {
+                return action();
+            }
+            catch (SuspendedRequestException)
+            {
+                return default(TResult);
+            }
+            catch (Exception)
+            {
+                if (fallback == null)
+                {
+                    throw;
+                }
+                return fallback.Invoke();
+            }
+        }
+        async Task InvokeAsync(Func<Task> action, Func<Task> fallback)
+        {
+            try
+            {
+                await action();
+            }
+            catch (SuspendedRequestException)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (fallback == null)
+                {
+                    throw;
+                }
+                await fallback.Invoke();
+            }
+        }
+        async Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action, Func<Task<TResult>> fallback)
+        {
+            try
+            {
+                return await action();
+            }
+            catch (SuspendedRequestException)
+            {
+                return default(TResult);
+            }
+            catch (Exception)
+            {
+                if (fallback == null)
+                {
+                    throw;
+                }
+                return await fallback.Invoke();
+            }
+        }
+
         #endregion
-        
+
     }
 }
