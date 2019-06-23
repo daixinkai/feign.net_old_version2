@@ -12,7 +12,10 @@ namespace Feign
         {
             if (task.IsCompleted)
             {
-                return task.Result;
+                if (!task.IsFaulted && !task.IsCanceled)
+                {
+                    return task.Result;
+                }
             }
             return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
