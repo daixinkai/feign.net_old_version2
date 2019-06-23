@@ -325,7 +325,6 @@ namespace Feign.Proxy
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Exception during SendAsync()");
                 #region ErrorRequest
                 ErrorRequestEventArgs errorArgs = new ErrorRequestEventArgs(this, ex);
                 _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);

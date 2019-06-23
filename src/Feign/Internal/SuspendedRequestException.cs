@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Internal
 {
-    class SuspendedRequestException : Exception
+    class SuspendedRequestException : Exception, ISkipLogException
     {
         public SuspendedRequestException()
         {

@@ -98,7 +98,10 @@ namespace Feign.Discovery
             }
             catch (Exception e)
             {
-                _logger?.LogError(e, "Exception during SendAsync()");
+                if (!e.IsSkipLog())
+                {
+                    _logger?.LogError(e, "Exception during SendAsync()");
+                }
                 throw;
             }
             finally
