@@ -17,9 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Feign.Polly", "src\Feign.Po
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Feign.Autofac", "src\Feign.Autofac\Feign.Autofac.csproj", "{477A810F-811A-456D-9A4F-42007010E762}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Feign.Standalone", "src\Feign.Standalone\Feign.Standalone.csproj", "{E1172DFC-A3DB-4126-815B-4B3A48CA7974}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Feign.Standalone", "src\Feign.Standalone\Feign.Standalone.csproj", "{E1172DFC-A3DB-4126-815B-4B3A48CA7974}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Feign.CastleWindsor", "src\Feign.CastleWindsor\Feign.CastleWindsor.csproj", "{11137407-51BC-4746-8889-432B9F9A77CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Feign.CastleWindsor", "src\Feign.CastleWindsor\Feign.CastleWindsor.csproj", "{11137407-51BC-4746-8889-432B9F9A77CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Feign.Steeltoe", "src\Feign.Steeltoe\Feign.Steeltoe.csproj", "{15604B2C-5065-4348-9EE3-D86ADD38B08C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{11137407-51BC-4746-8889-432B9F9A77CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11137407-51BC-4746-8889-432B9F9A77CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11137407-51BC-4746-8889-432B9F9A77CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15604B2C-5065-4348-9EE3-D86ADD38B08C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15604B2C-5065-4348-9EE3-D86ADD38B08C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15604B2C-5065-4348-9EE3-D86ADD38B08C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15604B2C-5065-4348-9EE3-D86ADD38B08C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -25,59 +25,20 @@ namespace Feign.Reflection
         {
             MethodInfo httpClientMethod;
             bool isGeneric = !(returnType == null || returnType == typeof(void) || returnType == typeof(Task));
-
             if (isGeneric)
             {
-                switch (requestMapping.GetMethod()?.ToUpper() ?? "")
-                {
-                    case "GET":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_GET_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_GET_GENERIC_METHOD_FALLBACK;
-                        break;
-                    case "POST":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_POST_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_POST_GENERIC_METHOD_FALLBACK;
-                        break;
-                    case "PUT":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_PUT_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_PUT_GENERIC_METHOD_FALLBACK;
-                        break;
-                    case "DELETE":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_DELETE_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_DELETE_GENERIC_METHOD_FALLBACK;
-                        break;
-                    default:
-                        throw new ArgumentException("httpMethod error");
-                }
+                httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_SEND_GENERIC_METHOD_FALLBACK;
             }
             else
             {
-                switch (requestMapping.GetMethod()?.ToUpper() ?? "")
-                {
-                    case "GET":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_GET_ASYNC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_GET_METHOD_FALLBACK;
-                        break;
-                    case "POST":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_POST_ASYNC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_POST_METHOD_FALLBACK;
-                        break;
-                    case "PUT":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_PUT_ASYNC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_PUT_METHOD_FALLBACK;
-                        break;
-                    case "DELETE":
-                        httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_DELETE_ASYNC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_DELETE_METHOD_FALLBACK;
-                        break;
-                    default:
-                        throw new ArgumentException("httpMethod error");
-                }
+                httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_SEND_ASYNC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_SEND_METHOD_FALLBACK;
             }
-
             if (isGeneric)
             {
                 return httpClientMethod.MakeGenericMethod(returnType);
             }
             return httpClientMethod;
         }
-
-        //protected override bool NeedRequestBody(MethodInfo method, RequestMappingBaseAttribute requestMappingBaseAttribute)
-        //{
-        //    return method.GetParameters().Length == 3;
-        //}
 
         protected override void BuildMethod(TypeBuilder typeBuilder, Type parentType, MethodInfo method, FeignClientAttribute feignClientAttribute, RequestMappingBaseAttribute requestMapping)
         {
@@ -99,7 +60,7 @@ namespace Feign.Reflection
 
             var invokeMethod = GetInvokeMethod(method, requestMapping);
 
-            bool needRequestBody = NeedRequestBody(invokeMethod, requestMapping);
+            bool supportRequestBody = SupportRequestBody(invokeMethod, requestMapping);
 
             ParameterInfo requestBodyParameter = null;
             int requestBodyParameterIndex = -1;
@@ -109,6 +70,10 @@ namespace Feign.Reflection
             {
                 if (parameterInfo.IsDefined(typeof(RequestBodyAttribute)))
                 {
+                    if (!supportRequestBody)
+                    {
+                        throw new ArgumentException("不支持RequestBody!");
+                    }
                     if (requestBodyParameter != null)
                     {
                         throw new ArgumentException("最多只能有一个RequestBody", parameterInfo.Name);
@@ -122,23 +87,31 @@ namespace Feign.Reflection
             }
 
 
-
-
-
-            iLGenerator.Emit(OpCodes.Ldarg_0);
-            iLGenerator.Emit(OpCodes.Ldloc, local_Uri);
-            if (needRequestBody)
+            iLGenerator.Emit(OpCodes.Ldarg_0);  //this
+            //baseUrl
+            EmitBaseUrl(iLGenerator);
+            //mapping uri
+            if (requestMapping.Value == null)
             {
-                if (requestBodyParameter != null)
-                {
-                    iLGenerator.Emit(OpCodes.Ldarg_S, requestBodyParameterIndex);
-                }
-                else
-                {
-                    iLGenerator.Emit(OpCodes.Ldnull);
-                }
+                iLGenerator.Emit(OpCodes.Ldnull);
             }
-
+            else
+            {
+                iLGenerator.Emit(OpCodes.Ldstr, requestMapping.Value);
+            }
+            iLGenerator.Emit(OpCodes.Ldloc, local_Uri); //uri
+            iLGenerator.Emit(OpCodes.Ldstr, requestMapping.GetMethod()); //method
+            iLGenerator.Emit(OpCodes.Ldnull); // mediaType
+            //content
+            if (requestBodyParameter != null)
+            {
+                iLGenerator.Emit(OpCodes.Ldarg_S, requestBodyParameterIndex);
+            }
+            else
+            {
+                iLGenerator.Emit(OpCodes.Ldnull);
+            }
+            iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientRequest).GetConstructors()[0]);
             // fallback
             LocalBuilder fallbackDelegate = DefineFallbackDelegate(typeBuilder, methodBuilder, iLGenerator, parentType, method);
             iLGenerator.Emit(OpCodes.Ldloc, fallbackDelegate);

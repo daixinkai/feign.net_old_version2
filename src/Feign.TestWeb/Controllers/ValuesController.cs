@@ -35,6 +35,13 @@ namespace Feign.TestWeb.Controllers
             //    Name = "asasdsad"
             //});
             //return await testService.GetValueAsync(id, "asdasd");
+            testService.GetValueVoid(id, new TestServiceParam
+            {
+                Name = "testName"
+            }, new TestServiceParam
+            {
+                Name = "name"
+            });
             await testService.PostValueAsync();
             await testService.PostValueAsync(id, "", new TestServiceParam());
             return testService.GetQueryResultValue(id.ToString(), new TestServiceParam

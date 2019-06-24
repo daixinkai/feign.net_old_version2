@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Feign
 {
-    class ServiceFeignClientPipelineBuilder : FeignClientPipelineBuilderBase, IFeignClientPipelineBuilder
+    class ServiceFeignClientPipelineBuilder : FeignClientPipelineBuilderBase, IServiceFeignClientPipelineBuilder
     {
         public ServiceFeignClientPipelineBuilder(string serviceId)
         {

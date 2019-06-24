@@ -9,7 +9,7 @@ namespace Feign.Tests
     {
         public CustomFeignClientAttribute(string name) : base(name)
         {
-            _url = "http://10.1.5.90:8802/";
+            //_url = "http://10.1.5.90:8802/";
         }
 
         string _url;

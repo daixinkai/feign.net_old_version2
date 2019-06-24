@@ -77,7 +77,7 @@ namespace Feign.Tests
             return _queryResultFunc.Invoke();
         }
 
-        public static void AddTestFeignClients(this IFeignBuilder feignBuilder)
+        public static IFeignBuilder AddTestFeignClients(this IFeignBuilder feignBuilder)
         {
             feignBuilder.AddFeignClients(Assembly.GetExecutingAssembly(), FeignClientLifetime.Singleton);
             feignBuilder.Options.FeignClientPipeline.Initializing += (sender, e) =>
@@ -145,11 +145,12 @@ namespace Feign.Tests
                 Exception exception = e.Exception;
                 //e.ExceptionHandled = true;
             };
+            return feignBuilder;
         }
 
         private static void FeignClientPipeline_SendingRequest(object sender, SendingRequestEventArgs e)
         {
-            e.SuspendRequest();
+            //e.SuspendRequest();
         }
 
     }

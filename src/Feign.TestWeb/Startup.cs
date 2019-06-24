@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Steeltoe.Discovery.Client;
 
 namespace Feign.TestWeb
 {
@@ -28,9 +29,10 @@ namespace Feign.TestWeb
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             //services.AddDiscoveryClient(Configuration);
-
+            services.AddDiscoveryClient(Configuration);
             services.AddFeignClients()
                 .AddTestFeignClients()
+                .AddSteeltoeServiceDiscovery()
                 ;
         }
 
@@ -46,8 +48,8 @@ namespace Feign.TestWeb
             {
                 app.UseDeveloperExceptionPage();
             }
-
             app.UseMvc();
+            app.UseDiscoveryClient();            
         }
     }
 }

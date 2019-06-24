@@ -21,5 +21,9 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MediaType\" />
+  </ItemGroup>
+
 
 </Project>

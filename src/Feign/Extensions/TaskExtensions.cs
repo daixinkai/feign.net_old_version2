@@ -10,12 +10,9 @@ namespace Feign
     {
         public static TResult GetResult<TResult>(this Task<TResult> task)
         {
-            if (task.IsCompleted)
+            if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
             {
-                if (!task.IsFaulted && !task.IsCanceled)
-                {
-                    return task.Result;
-                }
+                return task.Result;
             }
             return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }

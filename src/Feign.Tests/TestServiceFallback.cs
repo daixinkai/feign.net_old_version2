@@ -119,5 +119,10 @@ namespace Feign.Tests
             //return _testService1.PostValueAsync(id, test, param);
             return Task.FromResult<object>(null);
         }
+
+        public void GetValueVoid([PathVariable] int id, [RequestParam] TestServiceParam queryParam, [RequestQuery] TestServiceParam param)
+        {
+
+        }
     }
 }

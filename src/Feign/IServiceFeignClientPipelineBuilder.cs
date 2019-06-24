@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Feign
 {
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class PollyExtensions
+    public interface IServiceFeignClientPipelineBuilder : IFeignClientPipelineBuilder
     {
-
     }
 }

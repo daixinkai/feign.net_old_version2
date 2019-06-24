@@ -14,7 +14,6 @@ namespace Feign
             _servicePipelineBuilderMap.TryGetValue(serviceId, out serviceFeignClientPipeline);
             return serviceFeignClientPipeline;
         }
-
         public ServiceFeignClientPipelineBuilder GetOrAddServicePipeline(string serviceId)
         {
             ServiceFeignClientPipelineBuilder serviceFeignClientPipeline;
@@ -27,5 +26,14 @@ namespace Feign
             return serviceFeignClientPipeline;
         }
 
+        IServiceFeignClientPipelineBuilder IGlobalFeignClientPipelineBuilder.GetServicePipeline(string serviceId)
+        {
+            return GetServicePipeline(serviceId);
+        }
+
+        IServiceFeignClientPipelineBuilder IGlobalFeignClientPipelineBuilder.GetOrAddServicePipeline(string serviceId)
+        {
+            return GetOrAddServicePipeline(serviceId);
+        }
     }
 }

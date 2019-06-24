@@ -20,18 +20,13 @@ namespace Feign
         /// <param name="globalFeignClientPipelineBuilder"></param>
         /// <param name="serviceId"></param>
         /// <returns></returns>
-        public static IFeignClientPipelineBuilder Service(this IGlobalFeignClientPipelineBuilder globalFeignClientPipelineBuilder, string serviceId)
+        public static IServiceFeignClientPipelineBuilder Service(this IGlobalFeignClientPipelineBuilder globalFeignClientPipelineBuilder, string serviceId)
         {
             if (string.IsNullOrWhiteSpace(serviceId))
             {
                 throw new ArgumentException(nameof(serviceId));
             }
-            GlobalFeignClientPipelineBuilder pipelineBuilder = globalFeignClientPipelineBuilder as GlobalFeignClientPipelineBuilder;
-            if (pipelineBuilder == null)
-            {
-                throw new NotSupportedException();
-            }
-            return pipelineBuilder.GetOrAddServicePipeline(serviceId);
+            return globalFeignClientPipelineBuilder.GetOrAddServicePipeline(serviceId);
         }
 
         #region Authorization

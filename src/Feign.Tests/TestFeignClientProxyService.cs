@@ -21,7 +21,7 @@ namespace Feign.Tests
         {
             try
             {
-                return Get<JObject>(s);
+                return Send<JObject>(new FeignClientRequest("", "", "", "GET", "", null));
             }
             catch (Exception ex)
             {

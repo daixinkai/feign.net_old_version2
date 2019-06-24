@@ -5,6 +5,7 @@ using Feign.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -21,10 +22,10 @@ namespace Feign.Proxy
             //_logger = loggerFactory?.CreateLogger(this.GetType());
             _logger = loggerFactory?.CreateLogger(typeof(FeignClientProxyService));
             _globalFeignClientPipeline = _feignOptions?.FeignClientPipeline as GlobalFeignClientPipelineBuilder;
-            ServiceDiscoveryHttpClientHandler serviceDiscoveryHttpClientHandler = new ServiceDiscoveryHttpClientHandler(serviceDiscovery, this, _globalFeignClientPipeline, serviceCacheProvider, _logger);
+            ServiceDiscoveryHttpClientHandler serviceDiscoveryHttpClientHandler = new ServiceDiscoveryHttpClientHandler(this, serviceDiscovery, _globalFeignClientPipeline, serviceCacheProvider, _logger);
             serviceDiscoveryHttpClientHandler.ShouldResolveService = string.IsNullOrWhiteSpace(Url);
             serviceDiscoveryHttpClientHandler.AllowAutoRedirect = false;
-            _httpClient = new HttpClient(serviceDiscoveryHttpClientHandler);
+            HttpClient = new HttpClient(serviceDiscoveryHttpClientHandler);
             string baseUrl = serviceDiscoveryHttpClientHandler.ShouldResolveService ? ServiceId ?? "" : Url;
             if (!baseUrl.StartsWith("http"))
             {
@@ -50,18 +51,18 @@ namespace Feign.Proxy
             {
                 baseUrl = baseUrl.TrimEnd('/');
             }
-            _baseUrl = baseUrl;
+            BaseUrl = baseUrl;
 
             InitializingEventArgs initializingEventArgs = new InitializingEventArgs(this);
-            initializingEventArgs.HttpClient = _httpClient;
+            initializingEventArgs.HttpClient = HttpClient;
             _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnInitializing(this, initializingEventArgs);
             _globalFeignClientPipeline?.OnInitializing(this, initializingEventArgs);
 
-            _httpClient = initializingEventArgs.HttpClient;
+            HttpClient = initializingEventArgs.HttpClient;
 
-            if (_httpClient == null)
+            if (HttpClient == null)
             {
-                throw new ArgumentNullException(nameof(_httpClient));
+                throw new ArgumentNullException(nameof(HttpClient));
             }
 
         }
@@ -71,12 +72,11 @@ namespace Feign.Proxy
 
         protected virtual bool IsResponseSuspendedRequest => true;
 
-
         public virtual string BaseUri { get { return null; } }
 
         public virtual string Url { get { return null; } }
 
-        string _baseUrl;
+        protected string BaseUrl { get; }
 
         ILogger _logger;
 
@@ -84,236 +84,56 @@ namespace Feign.Proxy
 
         IFeignOptions _feignOptions;
 
-        HttpClient _httpClient;
+        protected HttpClient HttpClient { get; }
 
-        protected HttpClient HttpClient
-        {
-            get
-            {
-                return _httpClient;
-            }
-        }
+        #region Send Request
 
+        #region Define
 
-        #region HttpMethod
+        internal static readonly MethodInfo HTTP_SEND_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "Send");
+        internal static readonly MethodInfo HTTP_SEND_ASYNC_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "SendAsync");
 
-        #region get
-        internal static readonly MethodInfo HTTP_GET_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "Get");
-        internal static readonly MethodInfo HTTP_GET_ASYNC_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "GetAsync");
-
-        internal static readonly MethodInfo HTTP_GET_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "Get");
-        internal static readonly MethodInfo HTTP_GET_ASYNC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "GetAsync");
-        #endregion
-
-        #region post
-        internal static readonly MethodInfo HTTP_POST_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "Post");
-        internal static readonly MethodInfo HTTP_POST_ASYNC_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "PostAsync");
-
-        internal static readonly MethodInfo HTTP_POST_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "Post");
-        internal static readonly MethodInfo HTTP_POST_ASYNC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "PostAsync");
-        #endregion
-
-        #region put
-        internal static readonly MethodInfo HTTP_PUT_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "Put");
-        internal static readonly MethodInfo HTTP_PUT_ASYNC_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "PutAsync");
-
-        internal static readonly MethodInfo HTTP_PUT_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "Put");
-        internal static readonly MethodInfo HTTP_PUT_ASYNC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "PutAsync");
-        #endregion
-
-        #region delete
-        internal static readonly MethodInfo HTTP_DELETE_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "Delete");
-        internal static readonly MethodInfo HTTP_DELETE_ASYNC_GENERIC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod).FirstOrDefault(o => o.Name == "DeleteAsync");
-
-        internal static readonly MethodInfo HTTP_DELETE_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "Delete");
-        internal static readonly MethodInfo HTTP_DELETE_ASYNC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "DeleteAsync");
-        #endregion
-
-
-        protected string BuildUri(string uri)
-        {
-            if (uri.StartsWith("/"))
-            {
-                return _baseUrl + uri;
-            }
-            return _baseUrl + "/" + uri;
-        }
-
-        #region get
-        protected virtual void Get(string uri)
-        {
-            HttpResponseMessage response = GetResponseMessage(() => _httpClient.GetAsync(BuildUri(uri)).GetResult());
-            GetResult<string>(response);
-        }
-        protected virtual TResult Get<TResult>(string uri)
-        {
-            HttpResponseMessage response = GetResponseMessage(() => _httpClient.GetAsync(BuildUri(uri)).GetResult());
-            return GetResult<TResult>(response);
-        }
-        protected virtual async Task<TResult> GetAsync<TResult>(string uri)
-        {
-            HttpResponseMessage response = await GetResponseMessageAsync(() => _httpClient.GetAsync(BuildUri(uri))); ;
-            return await GetResultAsync<TResult>(response);
-        }
-
-        protected virtual async Task GetAsync(string uri)
-        {
-            HttpResponseMessage response = await GetResponseMessageAsync(() => _httpClient.GetAsync(BuildUri(uri))); ;
-            await GetResultAsync<string>(response);
-        }
-        #endregion
-
-        #region post
-        protected virtual TResult Post<TResult>(string uri, object value)
-        {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = PostMessage(_httpClient, BuildUri(uri), value);
-                return GetResult<TResult>(response);
-            }
-        }
-        protected virtual void Post(string uri, object value)
-        {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = PostMessage(_httpClient, BuildUri(uri), value);
-                GetResult<string>(response);
-            }
-        }
-        protected virtual async Task<TResult> PostAsync<TResult>(string uri, object value)
-        {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = await PostMessageAsync(_httpClient, BuildUri(uri), value);
-                return await GetResultAsync<TResult>(response);
-            }
-        }
-
-        protected virtual async Task PostAsync(string uri, object value)
-        {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = await PostMessageAsync(_httpClient, BuildUri(uri), value);
-                await GetResultAsync<string>(response);
-            }
-        }
-
-        HttpResponseMessage PostMessage(HttpClient httpClient, string uri, object value)
-        {
-            if (value is HttpContent)
-            {
-                return GetResponseMessage(() => httpClient.PostAsync(uri, (HttpContent)value).GetResult());
-            }
-            else
-            {
-                return GetResponseMessage(() => httpClient.PostAsync(uri, new ObjectContent(value)).GetResult());
-            }
-        }
-
-        Task<HttpResponseMessage> PostMessageAsync(HttpClient httpClient, string uri, object value)
-        {
-            if (value is HttpContent)
-            {
-                return GetResponseMessageAsync(() => httpClient.PostAsync(uri, (HttpContent)value));
-            }
-            else
-            {
-                return GetResponseMessageAsync(() => httpClient.PostAsync(uri, new ObjectContent(value)));
-            }
-        }
+        internal static readonly MethodInfo HTTP_SEND_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "Send");
+        internal static readonly MethodInfo HTTP_SEND_ASYNC_METHOD = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod).FirstOrDefault(o => o.Name == "SendAsync");
 
         #endregion
 
-        #region put
-        protected virtual TResult Put<TResult>(string uri, object value)
+        protected async Task SendAsync(FeignClientRequest request)
         {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = PutMessage(_httpClient, BuildUri(uri), value);
-                return GetResult<TResult>(response);
-            }
+            HttpResponseMessage response = await GetResponseMessageAsync(request);
+            await GetResultAsync<string>(request, response);
         }
-        protected virtual void Put(string uri, object value)
+        protected async Task<TResult> SendAsync<TResult>(FeignClientRequest request)
         {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = PutMessage(_httpClient, BuildUri(uri), value);
-                GetResult<string>(response);
-            }
+            HttpResponseMessage response = await GetResponseMessageAsync(request);
+            return await GetResultAsync<TResult>(request, response);
         }
-        protected virtual async Task<TResult> PutAsync<TResult>(string uri, object value)
+        protected void Send(FeignClientRequest request)
         {
-            using (HttpContent httpContent = new ObjectStringContent(value))
-            {
-                HttpResponseMessage response = await PutMessageAsync(_httpClient, BuildUri(uri), value);
-                return await GetResultAsync<TResult>(response);
-            }
+            HttpResponseMessage response = GetResponseMessage(request);
+            GetResult<string>(request, response);
+        }
+        protected TResult Send<TResult>(FeignClientRequest request)
+        {
+            HttpResponseMessage response = GetResponseMessage(request);
+            return GetResult<TResult>(request, response);
         }
 
-        protected virtual async Task PutAsync(string uri, object value)
+
+        HttpContent GetHttpContent(FeignClientRequest request)
         {
-            using (HttpContent httpContent = new ObjectStringContent(value))
+            if (request.Content != null)
             {
-                HttpResponseMessage response = await PutMessageAsync(_httpClient, BuildUri(uri), value);
-                await GetResultAsync<string>(response);
+                return new ObjectStringContent(request.Content);
             }
+            return null;
         }
 
-        HttpResponseMessage PutMessage(HttpClient httpClient, string uri, object value)
-        {
-            if (value is HttpContent)
-            {
-                return GetResponseMessage(() => httpClient.PutAsync(uri, (HttpContent)value).GetResult());
-            }
-            else
-            {
-                return GetResponseMessage(() => httpClient.PutAsync(uri, new ObjectContent(value)).GetResult());
-            }
-        }
-
-        Task<HttpResponseMessage> PutMessageAsync(HttpClient httpClient, string uri, object value)
-        {
-            if (value is HttpContent)
-            {
-                return GetResponseMessageAsync(() => httpClient.PostAsync(uri, (HttpContent)value));
-            }
-            else
-            {
-                return GetResponseMessageAsync(() => httpClient.PostAsync(uri, new ObjectContent(value)));
-            }
-        }
-
-        #endregion
-
-        #region delete
-        protected virtual TResult Delete<TResult>(string uri)
-        {
-            HttpResponseMessage response = GetResponseMessage(() => _httpClient.DeleteAsync(BuildUri(uri)).GetResult());
-            return GetResult<TResult>(response);
-        }
-        protected virtual void Delete(string uri)
-        {
-            HttpResponseMessage response = GetResponseMessage(() => _httpClient.DeleteAsync(BuildUri(uri)).GetResult());
-            GetResult<string>(response);
-        }
-
-        protected virtual async Task<TResult> DeleteAsync<TResult>(string uri)
-        {
-            HttpResponseMessage response = await GetResponseMessageAsync(() => _httpClient.DeleteAsync(BuildUri(uri)));
-            return await GetResultAsync<TResult>(response);
-        }
-        protected virtual async Task DeleteAsync(string uri)
-        {
-            HttpResponseMessage response = await GetResponseMessageAsync(() => _httpClient.DeleteAsync(BuildUri(uri)));
-            await GetResultAsync<string>(response);
-        }
-        #endregion
-
-        HttpResponseMessage GetResponseMessage(Func<HttpResponseMessage> action)
+        HttpResponseMessage GetResponseMessage(FeignClientRequest request)
         {
             try
             {
-                return action();
+                return SendAsync(request, GetHttpContent(request)).GetResult();
             }
             catch (SuspendedRequestException)
             {
@@ -341,11 +161,11 @@ namespace Feign.Proxy
             }
         }
 
-        async Task<HttpResponseMessage> GetResponseMessageAsync(Func<Task<HttpResponseMessage>> action)
+        async Task<HttpResponseMessage> GetResponseMessageAsync(FeignClientRequest request)
         {
             try
             {
-                return await action();
+                return await SendAsync(request, GetHttpContent(request));
             }
             catch (SuspendedRequestException)
             {
@@ -373,17 +193,31 @@ namespace Feign.Proxy
             }
         }
 
-        void EnsureSuccess(HttpResponseMessage responseMessage)
+        void EnsureSuccess(FeignClientRequest request, HttpResponseMessage responseMessage)
         {
             if (!responseMessage.IsSuccessStatusCode)
             {
                 string content = responseMessage.Content.ReadAsStringAsync().GetResult();
                 _logger?.LogError($"request on \"{responseMessage.RequestMessage.RequestUri.ToString()}\" status code : " + responseMessage.StatusCode.GetHashCode() + " content : " + content);
+                throw new FeignHttpRequestException(this,
+                    responseMessage.RequestMessage as FeignHttpRequestMessage,
+                    new HttpRequestException($"Response status code does not indicate success: {responseMessage.StatusCode.GetHashCode()} ({responseMessage.ReasonPhrase}).\r\nContent : {content}"));
             }
-            responseMessage.EnsureSuccessStatusCode();
         }
 
-        TResult GetResult<TResult>(HttpResponseMessage responseMessage)
+        async Task EnsureSuccessAsync(FeignClientRequest request, HttpResponseMessage responseMessage)
+        {
+            if (!responseMessage.IsSuccessStatusCode)
+            {
+                string content = await responseMessage.Content.ReadAsStringAsync();
+                _logger?.LogError($"request on \"{responseMessage.RequestMessage.RequestUri.ToString()}\" status code : " + responseMessage.StatusCode.GetHashCode() + " content : " + content);
+                throw new FeignHttpRequestException(this,
+                    responseMessage.RequestMessage as FeignHttpRequestMessage,
+                    new HttpRequestException($"Response status code does not indicate success: {responseMessage.StatusCode.GetHashCode()} ({responseMessage.ReasonPhrase}).\r\nContent : {content}"));
+            }
+        }
+
+        TResult GetResult<TResult>(FeignClientRequest request, HttpResponseMessage responseMessage)
         {
             if (responseMessage == null)
             {
@@ -398,7 +232,7 @@ namespace Feign.Proxy
                 return (TResult)receivingResponseEventArgs.Result;
             }
             #endregion
-            EnsureSuccess(responseMessage);
+            EnsureSuccess(request, responseMessage);
             if (typeof(TResult) == typeof(Task))
             {
 #if NET45
@@ -416,7 +250,7 @@ namespace Feign.Proxy
             return Newtonsoft.Json.JsonConvert.DeserializeObject<TResult>(text);
         }
 
-        async Task<TResult> GetResultAsync<TResult>(HttpResponseMessage responseMessage)
+        async Task<TResult> GetResultAsync<TResult>(FeignClientRequest request, HttpResponseMessage responseMessage)
         {
             if (responseMessage == null)
             {
@@ -431,7 +265,7 @@ namespace Feign.Proxy
                 return (TResult)receivingResponseEventArgs.Result;
             }
             #endregion
-            EnsureSuccess(responseMessage);
+            await EnsureSuccessAsync(request, responseMessage);
             if (typeof(TResult) == typeof(Task))
             {
 #if NET45
@@ -451,7 +285,65 @@ namespace Feign.Proxy
 
         #endregion
 
+        Task<HttpResponseMessage> SendAsync(FeignClientRequest request, HttpContent httpContent)
+        {
+            HttpMethod httpMethod = GetHttpMethod(request.Method);
+            HttpRequestMessage httpRequestMessage = CreateRequestMessage(request, httpMethod, CreateUri(BuildUri(request.Uri)));
+            if (httpContent != null)
+            {
+                // if support content
+                if (httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put)
+                {
+                    httpRequestMessage.Content = httpContent;
+                }
+            }
+            return HttpClient.SendAsync(httpRequestMessage);
+        }
 
+        private HttpMethod GetHttpMethod(string method)
+        {
+            HttpMethod httpMethod;
+            switch (method.ToUpper())
+            {
+                case "GET":
+                    httpMethod = HttpMethod.Get;
+                    break;
+                case "POST":
+                    httpMethod = HttpMethod.Post;
+                    break;
+                case "PUT":
+                    httpMethod = HttpMethod.Put;
+                    break;
+                case "DELETE":
+                    httpMethod = HttpMethod.Delete;
+                    break;
+                case "HEAD":
+                    httpMethod = HttpMethod.Head;
+                    break;
+                case "OPTIONS":
+                    httpMethod = HttpMethod.Options;
+                    break;
+                case "TRACE":
+                    httpMethod = HttpMethod.Trace;
+                    break;
+                default:
+                    httpMethod = new HttpMethod(method);
+                    break;
+            }
+            return httpMethod;
+        }
+        private HttpRequestMessage CreateRequestMessage(FeignClientRequest request, HttpMethod method, Uri uri) =>
+            new FeignHttpRequestMessage(request, method, uri);
+        private Uri CreateUri(string uri) =>
+            string.IsNullOrEmpty(uri) ? null : new Uri(uri, UriKind.RelativeOrAbsolute);
+        string BuildUri(string uri)
+        {
+            if (uri.StartsWith("/"))
+            {
+                return BaseUrl + uri;
+            }
+            return BaseUrl + "/" + uri;
+        }
 
         #region IDisposable Support
         private bool disposedValue = false; // 要检测冗余调用
@@ -470,7 +362,7 @@ namespace Feign.Proxy
 
                 // TODO: 释放未托管的资源(未托管的对象)并在以下内容中替代终结器。
                 // TODO: 将大型字段设置为 null。
-                _httpClient.Dispose();
+                HttpClient.Dispose();
                 disposedValue = true;
             }
         }

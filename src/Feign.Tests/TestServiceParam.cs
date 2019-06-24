@@ -8,5 +8,6 @@ namespace Feign.Tests
     public class TestServiceParam
     {
         public string Name { get; set; }
+        public int Age { get; set; }
     }
 }

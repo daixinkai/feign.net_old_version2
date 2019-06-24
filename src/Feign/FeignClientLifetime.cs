@@ -6,23 +6,22 @@ using System.Threading.Tasks;
 
 namespace Feign
 {
+    /// <summary>
+    /// Specifies the lifetime of a service
+    /// </summary>
     public enum FeignClientLifetime
     {
-        //
-        // 摘要:
-        //     Specifies that a single instance of the service will be created.
+        /// <summary>
+        /// Specifies that a single instance of the service will be created.   
+        /// </summary>
         Singleton = 0,
-        //
-        // 摘要:
-        //     Specifies that a new instance of the service will be created for each scope.
-        //
-        // 言论：
-        //     In ASP.NET Core applications a scope is created around each server request.
+        /// <summary>
+        /// Specifies that a new instance of the service will be created for each scope.
+        /// </summary>
         Scoped = 1,
-        //
-        // 摘要:
-        //     Specifies that a new instance of the service will be created every time it is
-        //     requested.
+        /// <summary>
+        /// Specifies that a new instance of the service will be created every time it is
+        /// </summary>
         Transient = 2
     }
 }

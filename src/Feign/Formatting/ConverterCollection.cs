@@ -48,15 +48,21 @@ namespace Feign.Formatting
 
         public IConverter<TSource, TResult> FindConverter<TSource, TResult>()
         {
+            IConverter converter = FindConverter(typeof(TSource), typeof(TResult));
+            return converter == null ? null : (IConverter<TSource, TResult>)converter;
+        }
+
+        public IConverter FindConverter(Type sourceType, Type resultType)
+        {
 #if NETSTANDARD
-            var key = (typeof(TSource), typeof(TResult));
+            var key = (sourceType, resultType);
 #endif
 #if NET45
-            var key = Tuple.Create(typeof(TSource), typeof(TResult));
+            var key = Tuple.Create(sourceType, resultType);
 #endif
             IConverter converter;
             _map.TryGetValue(key, out converter);
-            return converter == null ? null : (IConverter<TSource, TResult>)converter;
+            return converter;
         }
 
     }

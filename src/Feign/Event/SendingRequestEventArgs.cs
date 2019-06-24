@@ -7,11 +7,11 @@ namespace Feign
 {
     public sealed class SendingRequestEventArgs : FeignClientEventArgs
     {
-        internal SendingRequestEventArgs(IFeignClient feignClient, HttpRequestMessage requestMessage) : base(feignClient)
+        internal SendingRequestEventArgs(IFeignClient feignClient, FeignHttpRequestMessage requestMessage) : base(feignClient)
         {
             RequestMessage = requestMessage;
         }
-        public HttpRequestMessage RequestMessage { get; }
+        public FeignHttpRequestMessage RequestMessage { get; }
 
         public bool IsSuspendRequest => _isSuspendRequest;
 

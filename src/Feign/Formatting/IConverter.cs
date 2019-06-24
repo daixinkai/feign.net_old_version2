@@ -9,7 +9,7 @@ namespace Feign.Formatting
     {
     }
 
-    public interface IConverter<TSource, TResult> : IConverter
+    public interface IConverter<in TSource, out TResult> : IConverter
     {
         TResult Convert(TSource value);
     }
