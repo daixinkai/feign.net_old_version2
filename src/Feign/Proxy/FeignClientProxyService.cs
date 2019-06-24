@@ -336,6 +336,7 @@ namespace Feign.Proxy
             new FeignHttpRequestMessage(request, method, uri);
         private Uri CreateUri(string uri) =>
             string.IsNullOrEmpty(uri) ? null : new Uri(uri, UriKind.RelativeOrAbsolute);
+
         string BuildUri(string uri)
         {
             if (uri.StartsWith("/"))

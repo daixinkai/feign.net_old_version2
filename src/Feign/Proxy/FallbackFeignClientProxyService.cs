@@ -26,51 +26,21 @@ namespace Feign.Proxy
 
         protected override bool IsResponseSuspendedRequest => false;
 
-        #region HttpMethod
+        #region Send Request
 
-        void Invoke(Action action, Action fallback)
+        #region define
+        internal static readonly MethodInfo HTTP_SEND_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
+        internal static readonly MethodInfo HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
+
+        internal static readonly MethodInfo HTTP_SEND_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
+        internal static readonly MethodInfo HTTP_SEND_ASYNC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
+        #endregion
+
+        protected async Task SendAsync(FeignClientRequest request, Func<Task> fallback)
         {
             try
             {
-                action();
-            }
-            catch (SuspendedRequestException)
-            {
-                return;
-            }
-            catch (Exception)
-            {
-                if (fallback == null)
-                {
-                    throw;
-                }
-                fallback.Invoke();
-            }
-        }
-        TResult Invoke<TResult>(Func<TResult> action, Func<TResult> fallback)
-        {
-            try
-            {
-                return action();
-            }
-            catch (SuspendedRequestException)
-            {
-                return default(TResult);
-            }
-            catch (Exception)
-            {
-                if (fallback == null)
-                {
-                    throw;
-                }
-                return fallback.Invoke();
-            }
-        }
-        async Task InvokeAsync(Func<Task> action, Func<Task> fallback)
-        {
-            try
-            {
-                await action();
+                await SendAsync(request);
             }
             catch (SuspendedRequestException)
             {
@@ -85,11 +55,11 @@ namespace Feign.Proxy
                 await fallback.Invoke();
             }
         }
-        async Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action, Func<Task<TResult>> fallback)
+        protected async Task<TResult> SendAsync<TResult>(FeignClientRequest request, Func<Task<TResult>> fallback)
         {
             try
             {
-                return await action();
+                return await SendAsync<TResult>(request);
             }
             catch (SuspendedRequestException)
             {
@@ -104,34 +74,43 @@ namespace Feign.Proxy
                 return await fallback.Invoke();
             }
         }
-
-        #endregion
-
-        #region Send Request
-
-        #region define
-        internal static readonly MethodInfo HTTP_SEND_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
-        internal static readonly MethodInfo HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
-
-        internal static readonly MethodInfo HTTP_SEND_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
-        internal static readonly MethodInfo HTTP_SEND_ASYNC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
-        #endregion
-
-        protected Task SendAsync(FeignClientRequest request, Func<Task> fallback)
-        {
-            return InvokeAsync(() => SendAsync(request), fallback);
-        }
-        protected Task<TResult> SendAsync<TResult>(FeignClientRequest request, Func<Task<TResult>> fallback)
-        {
-            return InvokeAsync<TResult>(() => SendAsync<TResult>(request), fallback);
-        }
         protected void Send(FeignClientRequest request, Action fallback)
         {
-            Invoke(() => Send(request), fallback);
+            try
+            {
+                Send(request);
+            }
+            catch (SuspendedRequestException)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (fallback == null)
+                {
+                    throw;
+                }
+                fallback.Invoke();
+            }
         }
         protected TResult Send<TResult>(FeignClientRequest request, Func<TResult> fallback)
         {
-            return Invoke<TResult>(() => Send<TResult>(request), fallback);
+            try
+            {
+                return Send<TResult>(request);
+            }
+            catch (SuspendedRequestException)
+            {
+                return default(TResult);
+            }
+            catch (Exception)
+            {
+                if (fallback == null)
+                {
+                    throw;
+                }
+                return fallback.Invoke();
+            }
         }
         #endregion
 
