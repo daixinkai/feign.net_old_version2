@@ -16,6 +16,8 @@ namespace Feign
         }
         public string Value { get; set; }
 
+        public string ContentType { get; set; }
+
         public abstract string GetMethod();
 
     }

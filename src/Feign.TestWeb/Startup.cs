@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Feign.Fallback;
 using Feign.Tests;
@@ -19,7 +20,19 @@ namespace Feign.TestWeb
     {
         public Startup(IConfiguration configuration)
         {
+            Type[] types = new Type[5];
+            types[0] = null;
+            var method = MethodInfo.GetCurrentMethod();
+            Type t = typeof(int);
             Configuration = configuration;
+        }
+
+        public Type TestType
+        {
+            get
+            {
+                return typeof(int);
+            }
         }
 
         public IConfiguration Configuration { get; }
@@ -32,7 +45,7 @@ namespace Feign.TestWeb
             services.AddDiscoveryClient(Configuration);
             services.AddFeignClients()
                 .AddTestFeignClients()
-                .AddSteeltoeServiceDiscovery()
+                //.AddSteeltoeServiceDiscovery()
                 ;
         }
 
@@ -49,7 +62,7 @@ namespace Feign.TestWeb
                 app.UseDeveloperExceptionPage();
             }
             app.UseMvc();
-            app.UseDiscoveryClient();            
+            app.UseDiscoveryClient();
         }
     }
 }

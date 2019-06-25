@@ -16,7 +16,28 @@ namespace Feign
 
         public Type ResultType { get; }
 
-        public virtual object Result { get; set; }
+        internal bool _isSetResult;
+
+        object _result;
+
+        public object Result
+        {
+            get
+            {
+                return _result;
+            }
+            set
+            {
+                _isSetResult = true;
+                _result = value;
+            }
+        }
+
+        internal T GetResult<T>()
+        {
+            return Result == null ? default(T) : (T)Result;
+        }
+
     }
 
     public sealed class ReceivingResponseEventArgs<T> : ReceivingResponseEventArgs
@@ -24,8 +45,5 @@ namespace Feign
         internal ReceivingResponseEventArgs(IFeignClient feignClient, HttpResponseMessage responseMessage) : base(feignClient, responseMessage, typeof(T))
         {
         }
-
-        //public override object Result { get => base.Result; set => base.Result = value; }
-
     }
 }

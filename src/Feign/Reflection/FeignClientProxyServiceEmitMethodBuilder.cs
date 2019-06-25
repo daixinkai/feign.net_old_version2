@@ -17,12 +17,12 @@ namespace Feign.Reflection
 
         protected static readonly MethodInfo ReplaceRequestQueryMethod = typeof(FeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).FirstOrDefault(o => o.IsGenericMethod && o.Name == "ReplaceRequestQuery");
 
-        public void BuildMethod(TypeBuilder typeBuilder, Type parentType, MethodInfo method, FeignClientAttribute feignClientAttribute)
+        public void BuildMethod(TypeBuilder typeBuilder, Type serviceType, MethodInfo method, FeignClientAttribute feignClientAttribute)
         {
-            BuildMethod(typeBuilder, parentType, method, feignClientAttribute, GetRequestMappingAttribute(method));
+            BuildMethod(typeBuilder, serviceType, method, feignClientAttribute, GetRequestMappingAttribute(method));
         }
 
-        protected virtual void BuildMethod(TypeBuilder typeBuilder, Type parentType, MethodInfo method, FeignClientAttribute feignClientAttribute, RequestMappingBaseAttribute requestMapping)
+        protected virtual void BuildMethod(TypeBuilder typeBuilder, Type serviceType, MethodInfo method, FeignClientAttribute feignClientAttribute, RequestMappingBaseAttribute requestMapping)
         {
             MethodBuilder methodBuilder = CreateMethodBuilder(typeBuilder, method);
             ILGenerator iLGenerator = methodBuilder.GetILGenerator();
@@ -40,30 +40,10 @@ namespace Feign.Reflection
             iLGenerator.Emit(OpCodes.Stloc, local_Uri);
 
             var invokeMethod = GetInvokeMethod(method, requestMapping);
-            bool supportRequestBody = SupportRequestBody(invokeMethod, requestMapping);
-
-            ParameterInfo requestBodyParameter = null;
-            int requestBodyParameterIndex = -1;
-
-            int index = 1;
-            foreach (var parameterInfo in method.GetParameters())
+            EmitRequestContent emitRequestContent = EmitParameter(iLGenerator, method, local_Uri, local_OldValue);
+            if (emitRequestContent.RequestContent != null && !SupportRequestContent(invokeMethod, requestMapping))
             {
-                if (parameterInfo.IsDefined(typeof(RequestBodyAttribute)))
-                {
-                    if (!supportRequestBody)
-                    {
-                        throw new ArgumentException("不支持RequestBody!");
-                    }
-                    if (requestBodyParameter != null)
-                    {
-                        throw new ArgumentException("最多只能有一个RequestBody", parameterInfo.Name);
-                    }
-                    requestBodyParameter = parameterInfo;
-                    requestBodyParameterIndex = index;
-                    continue;
-                }
-                InvokeReplaceValue(iLGenerator, index, parameterInfo, local_Uri, local_OldValue);
-                index++;
+                throw new NotSupportedException("不支持RequestBody或者RequestForm");
             }
             iLGenerator.Emit(OpCodes.Ldarg_0);  //this
             // baseUrl
@@ -79,11 +59,11 @@ namespace Feign.Reflection
             }
             iLGenerator.Emit(OpCodes.Ldloc, local_Uri); //uri
             iLGenerator.Emit(OpCodes.Ldstr, requestMapping.GetMethod()); //method
-            iLGenerator.Emit(OpCodes.Ldnull); // mediaType
+            EmitContentType(iLGenerator, serviceType, requestMapping, emitRequestContent); // contentType
             //content
-            if (requestBodyParameter != null)
+            if (emitRequestContent.Content != null)
             {
-                iLGenerator.Emit(OpCodes.Ldarg_S, requestBodyParameterIndex);
+                iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.RequestContentIndex);
             }
             else
             {
@@ -93,45 +73,6 @@ namespace Feign.Reflection
             iLGenerator.Emit(OpCodes.Call, invokeMethod);
             iLGenerator.Emit(OpCodes.Ret);
         }
-
-
-        protected void InvokeReplaceValue(ILGenerator iLGenerator, int index, ParameterInfo parameterInfo, LocalBuilder uri, LocalBuilder value)
-        {
-            MethodInfo replaceValueMethod;
-            string name;
-            if (parameterInfo.IsDefined(typeof(RequestParamAttribute)))
-            {
-                name = parameterInfo.GetCustomAttribute<RequestParamAttribute>().Name ?? parameterInfo.Name;
-                replaceValueMethod = ReplaceRequestParamMethod;
-            }
-            else if (parameterInfo.IsDefined(typeof(RequestQueryAttribute)))
-            {
-                name = parameterInfo.Name;
-                replaceValueMethod = ReplaceRequestQueryMethod;
-            }
-            else
-            {
-                name = parameterInfo.IsDefined(typeof(PathVariableAttribute)) ? parameterInfo.GetCustomAttribute<PathVariableAttribute>().Name : parameterInfo.Name;
-                replaceValueMethod = ReplacePathVariableMethod;
-            }
-
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                name = parameterInfo.Name;
-            }
-
-            iLGenerator.Emit(OpCodes.Ldstr, name);
-            iLGenerator.Emit(OpCodes.Stloc, value);
-            iLGenerator.Emit(OpCodes.Ldarg_0);
-            iLGenerator.Emit(OpCodes.Ldloc, uri);
-            iLGenerator.Emit(OpCodes.Ldloc, value);
-            iLGenerator.Emit(OpCodes.Ldarg_S, index);
-
-            replaceValueMethod = replaceValueMethod.MakeGenericMethod(parameterInfo.ParameterType);
-            iLGenerator.Emit(OpCodes.Call, replaceValueMethod);
-            iLGenerator.Emit(OpCodes.Stloc, uri);
-        }
-
 
         protected virtual MethodInfo GetInvokeMethod(MethodInfo method, RequestMappingBaseAttribute requestMapping)
         {
@@ -165,7 +106,7 @@ namespace Feign.Reflection
             return httpClientMethod;
         }
 
-        protected virtual bool SupportRequestBody(MethodInfo method, RequestMappingBaseAttribute requestMappingBaseAttribute)
+        protected virtual bool SupportRequestContent(MethodInfo method, RequestMappingBaseAttribute requestMappingBaseAttribute)
         {
             return "POST".Equals(requestMappingBaseAttribute.GetMethod(), StringComparison.OrdinalIgnoreCase) || "PUT".Equals(requestMappingBaseAttribute.GetMethod(), StringComparison.OrdinalIgnoreCase);
         }
@@ -212,7 +153,13 @@ namespace Feign.Reflection
             MethodAttributes methodAttributes;
             if (method.IsVirtual)
             {
-                methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual;
+                //methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual;
+                methodAttributes = 
+                    MethodAttributes.Public
+                    | MethodAttributes.HideBySig
+                    | MethodAttributes.NewSlot
+                    | MethodAttributes.Virtual
+                    | MethodAttributes.Final;
             }
             else
             {
@@ -229,6 +176,88 @@ namespace Feign.Reflection
             PropertyInfo propertyInfo = typeof(FeignClientProxyService).GetProperty("BaseUrl", BindingFlags.Instance | BindingFlags.NonPublic);
             iLGenerator.Emit(OpCodes.Ldarg_0); //this
             iLGenerator.Emit(OpCodes.Callvirt, propertyInfo.GetMethod);
+        }
+
+        protected void EmitContentType(ILGenerator iLGenerator, Type serviceType, RequestMappingBaseAttribute requestMapping, EmitRequestContent requestContent)
+        {
+            string contentType = requestMapping.ContentType;
+            if (string.IsNullOrWhiteSpace(contentType) && serviceType.IsDefined(typeof(RequestMappingAttribute)))
+            {
+                contentType = serviceType.GetCustomAttribute<RequestMappingAttribute>().ContentType;
+            }
+            if (contentType == null)
+            {
+                iLGenerator.Emit(OpCodes.Ldnull);
+            }
+            else
+            {
+                iLGenerator.Emit(OpCodes.Ldstr, contentType);
+            }
+        }
+
+        protected EmitRequestContent EmitParameter(ILGenerator iLGenerator, MethodInfo method, LocalBuilder uri, LocalBuilder value)
+        {
+            EmitRequestContent emitRequestContent = new EmitRequestContent();
+            int index = 1;
+            foreach (var parameterInfo in method.GetParameters())
+            {
+                if (parameterInfo.IsDefined(typeof(RequestBodyAttribute)))
+                {
+                    if (emitRequestContent.RequestContent != null)
+                    {
+                        throw new ArgumentException("最多只能有一个RequestBody或者RequestForm", parameterInfo.Name);
+                    }
+                    emitRequestContent.Content = parameterInfo;
+                    emitRequestContent.RequestContent = parameterInfo.GetCustomAttribute<RequestBodyAttribute>();
+                    emitRequestContent.RequestContentIndex = index;
+                    continue;
+                }
+                if (parameterInfo.IsDefined(typeof(RequestFormAttribute)))
+                {
+                    if (emitRequestContent.RequestContent != null)
+                    {
+                        throw new ArgumentException("最多只能有一个RequestBody或者RequestForm", parameterInfo.Name);
+                    }
+                    emitRequestContent.Content = parameterInfo;
+                    emitRequestContent.RequestContent = parameterInfo.GetCustomAttribute<RequestFormAttribute>();
+                    emitRequestContent.RequestContentIndex = index;
+                    continue;
+                }
+                MethodInfo replaceValueMethod;
+                string name;
+                if (parameterInfo.IsDefined(typeof(RequestParamAttribute)))
+                {
+                    name = parameterInfo.GetCustomAttribute<RequestParamAttribute>().Name ?? parameterInfo.Name;
+                    replaceValueMethod = ReplaceRequestParamMethod;
+                }
+                else if (parameterInfo.IsDefined(typeof(RequestQueryAttribute)))
+                {
+                    name = parameterInfo.Name;
+                    replaceValueMethod = ReplaceRequestQueryMethod;
+                }
+                else
+                {
+                    name = parameterInfo.IsDefined(typeof(PathVariableAttribute)) ? parameterInfo.GetCustomAttribute<PathVariableAttribute>().Name : parameterInfo.Name;
+                    replaceValueMethod = ReplacePathVariableMethod;
+                }
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    name = parameterInfo.Name;
+                }
+
+                iLGenerator.Emit(OpCodes.Ldstr, name);
+                iLGenerator.Emit(OpCodes.Stloc, value);
+                iLGenerator.Emit(OpCodes.Ldarg_0);
+                iLGenerator.Emit(OpCodes.Ldloc, uri);
+                iLGenerator.Emit(OpCodes.Ldloc, value);
+                iLGenerator.Emit(OpCodes.Ldarg_S, index);
+                replaceValueMethod = replaceValueMethod.MakeGenericMethod(parameterInfo.ParameterType);
+                iLGenerator.Emit(OpCodes.Call, replaceValueMethod);
+                iLGenerator.Emit(OpCodes.Stloc, uri);
+                index++;
+            }
+            return emitRequestContent;
         }
 
     }

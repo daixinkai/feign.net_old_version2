@@ -40,7 +40,7 @@ namespace Feign.Reflection
             return httpClientMethod;
         }
 
-        protected override void BuildMethod(TypeBuilder typeBuilder, Type parentType, MethodInfo method, FeignClientAttribute feignClientAttribute, RequestMappingBaseAttribute requestMapping)
+        protected override void BuildMethod(TypeBuilder typeBuilder, Type serviceType, MethodInfo method, FeignClientAttribute feignClientAttribute, RequestMappingBaseAttribute requestMapping)
         {
             MethodBuilder methodBuilder = CreateMethodBuilder(typeBuilder, method);
             ILGenerator iLGenerator = methodBuilder.GetILGenerator();
@@ -59,34 +59,11 @@ namespace Feign.Reflection
             iLGenerator.Emit(OpCodes.Stloc, local_Uri);
 
             var invokeMethod = GetInvokeMethod(method, requestMapping);
-
-            bool supportRequestBody = SupportRequestBody(invokeMethod, requestMapping);
-
-            ParameterInfo requestBodyParameter = null;
-            int requestBodyParameterIndex = -1;
-
-            int index = 1;
-            foreach (var parameterInfo in method.GetParameters())
+            EmitRequestContent emitRequestContent = EmitParameter(iLGenerator, method, local_Uri, local_OldValue);
+            if (emitRequestContent.RequestContent != null && !SupportRequestContent(invokeMethod, requestMapping))
             {
-                if (parameterInfo.IsDefined(typeof(RequestBodyAttribute)))
-                {
-                    if (!supportRequestBody)
-                    {
-                        throw new ArgumentException("不支持RequestBody!");
-                    }
-                    if (requestBodyParameter != null)
-                    {
-                        throw new ArgumentException("最多只能有一个RequestBody", parameterInfo.Name);
-                    }
-                    requestBodyParameter = parameterInfo;
-                    requestBodyParameterIndex = index;
-                    continue;
-                }
-                InvokeReplaceValue(iLGenerator, index, parameterInfo, local_Uri, local_OldValue);
-                index++;
+                throw new NotSupportedException("不支持RequestBody或者RequestForm");
             }
-
-
             iLGenerator.Emit(OpCodes.Ldarg_0);  //this
             //baseUrl
             EmitBaseUrl(iLGenerator);
@@ -101,11 +78,11 @@ namespace Feign.Reflection
             }
             iLGenerator.Emit(OpCodes.Ldloc, local_Uri); //uri
             iLGenerator.Emit(OpCodes.Ldstr, requestMapping.GetMethod()); //method
-            iLGenerator.Emit(OpCodes.Ldnull); // mediaType
+            EmitContentType(iLGenerator, serviceType, requestMapping, emitRequestContent); // contentType
             //content
-            if (requestBodyParameter != null)
+            if (emitRequestContent.Content != null)
             {
-                iLGenerator.Emit(OpCodes.Ldarg_S, requestBodyParameterIndex);
+                iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.RequestContentIndex);
             }
             else
             {
@@ -113,14 +90,14 @@ namespace Feign.Reflection
             }
             iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientRequest).GetConstructors()[0]);
             // fallback
-            LocalBuilder fallbackDelegate = DefineFallbackDelegate(typeBuilder, methodBuilder, iLGenerator, parentType, method);
+            LocalBuilder fallbackDelegate = DefineFallbackDelegate(typeBuilder, methodBuilder, iLGenerator, method);
             iLGenerator.Emit(OpCodes.Ldloc, fallbackDelegate);
             iLGenerator.Emit(OpCodes.Call, invokeMethod);
             iLGenerator.Emit(OpCodes.Ret);
         }
 
 
-        LocalBuilder DefineFallbackDelegate(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type parentType, MethodInfo method)
+        LocalBuilder DefineFallbackDelegate(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, MethodInfo method)
         {
             Type delegateType;
             if (method.ReturnType == null || method.ReturnType == typeof(void))
@@ -142,13 +119,16 @@ namespace Feign.Reflection
             // if has parameters
             if (method.GetParameters().Length > 0)
             {
+                //nedd
                 //var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(_dynamicAssembly,typeBuilder, methodBuilder, method.GetParameters());
-                var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(_dynamicAssembly, typeBuilder, method);
+                //var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(_dynamicAssembly.ModuleBuilder, typeBuilder, method);
+                var anonymousMethodClassTypeBuild = FallbackAnonymousMethodClassBuilder.BuildType(_dynamicAssembly.ModuleBuilder, typeBuilder, method);
                 // new anonymousMethodClass
                 LocalBuilder anonymousMethodClass = iLGenerator.DeclareLocal(anonymousMethodClassTypeBuild.Item1);
                 //field
                 iLGenerator.Emit(OpCodes.Ldarg_0); //this
-                iLGenerator.Emit(OpCodes.Call, parentType.GetProperty("Fallback").GetMethod); //.Fallback
+
+                iLGenerator.Emit(OpCodes.Call, typeBuilder.BaseType.GetProperty("Fallback").GetMethod); //.Fallback
                 for (int i = 1; i <= method.GetParameters().Length; i++)
                 {
                     iLGenerator.Emit(OpCodes.Ldarg_S, i);
@@ -161,7 +141,7 @@ namespace Feign.Reflection
             else
             {
                 iLGenerator.Emit(OpCodes.Ldarg_0); //this
-                iLGenerator.Emit(OpCodes.Call, parentType.GetProperty("Fallback").GetMethod); //.Fallback
+                iLGenerator.Emit(OpCodes.Call, typeBuilder.BaseType.GetProperty("Fallback").GetMethod); //.Fallback
                 iLGenerator.Emit(OpCodes.Ldftn, method);
             }
 

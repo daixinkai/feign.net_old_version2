@@ -52,6 +52,7 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
+                InvokeFallbackRequestPipeline(request, fallback);
                 await fallback.Invoke();
             }
         }
@@ -71,6 +72,7 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
+                InvokeFallbackRequestPipeline(request, fallback);
                 return await fallback.Invoke();
             }
         }
@@ -90,6 +92,7 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
+                InvokeFallbackRequestPipeline(request, fallback);
                 fallback.Invoke();
             }
         }
@@ -109,10 +112,17 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
+                InvokeFallbackRequestPipeline(request, fallback);
                 return fallback.Invoke();
             }
         }
         #endregion
+
+        void InvokeFallbackRequestPipeline(FeignClientRequest request, Delegate @delegate)
+        {
+            FallbackRequestEventArgs eventArgs = new FallbackRequestEventArgs(this, request, _fallback, @delegate.Target as IFallbackProxy, @delegate.Method);
+            _globalFeignClientPipeline.InvokeFallbackRequest(this, eventArgs);
+        }
 
     }
 }

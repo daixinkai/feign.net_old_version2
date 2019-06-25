@@ -79,7 +79,7 @@ namespace Feign.Reflection
             typeBuilder.AddInterfaceImplementation(interfaceType);
             foreach (var method in interfaceType.GetMethods())
             {
-                methodBuilder.BuildMethod(typeBuilder, parentType, method, feignClientAttribute);
+                methodBuilder.BuildMethod(typeBuilder, interfaceType, method, feignClientAttribute);
             }
             var typeInfo = typeBuilder.CreateTypeInfo();
             Type type = typeInfo.AsType();
@@ -133,7 +133,7 @@ namespace Feign.Reflection
             //{
             MethodBuilder propertyGet = typeBuilder.DefineMethod("get_" + propertyName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Virtual, typeof(string), Type.EmptyTypes);
             ILGenerator iLGenerator = propertyGet.GetILGenerator();
-            if (propertyValue==null)
+            if (propertyValue == null)
             {
                 iLGenerator.Emit(OpCodes.Ldnull);
             }

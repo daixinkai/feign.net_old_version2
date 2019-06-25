@@ -37,15 +37,12 @@ namespace Feign
         {
             FeignHttpRequestMessage feignRequest = request as FeignHttpRequestMessage;
             var current = request.RequestUri;
-            ServiceFeignClientPipelineBuilder serviceFeignClientPipeline = _globalFeignClientPipeline?.GetServicePipeline(_feignClient.ServiceId);
             try
             {
 
                 #region BuildingRequest
                 BuildingRequestEventArgs buildingArgs = new BuildingRequestEventArgs(_feignClient, request.Method.ToString(), request.RequestUri, new Dictionary<string, string>());
-
-                serviceFeignClientPipeline?.OnBuildingRequest(_feignClient, buildingArgs);
-                _globalFeignClientPipeline?.OnBuildingRequest(_feignClient, buildingArgs);
+                _globalFeignClientPipeline?.InvokeBuildingRequest(_feignClient, buildingArgs);
                 //request.Method = new HttpMethod(buildingArgs.Method);
                 request.RequestUri = buildingArgs.RequestUri;
                 if (buildingArgs.Headers != null && buildingArgs.Headers.Count > 0)
@@ -59,8 +56,7 @@ namespace Feign
                 request.RequestUri = LookupRequestUri(request.RequestUri);
                 #region SendingRequest
                 SendingRequestEventArgs sendingArgs = new SendingRequestEventArgs(_feignClient, feignRequest);
-                serviceFeignClientPipeline?.OnSendingRequest(_feignClient, sendingArgs);
-                _globalFeignClientPipeline?.OnSendingRequest(_feignClient, sendingArgs);
+                _globalFeignClientPipeline?.InvokeSendingRequest(_feignClient, sendingArgs);
                 if (sendingArgs.IsSuspendRequest)
                 {
                     throw new SuspendedRequestException();
@@ -81,8 +77,7 @@ namespace Feign
 
                 #region CannelRequest
                 CancelRequestEventArgs cancelArgs = new CancelRequestEventArgs(_feignClient, cancellationToken);
-                serviceFeignClientPipeline?.OnCancelRequest(_feignClient, cancelArgs);
-                _globalFeignClientPipeline?.OnCancelRequest(_feignClient, cancelArgs);
+                _globalFeignClientPipeline?.InvokeCancelRequest(_feignClient, cancelArgs);
                 #endregion
 
                 return await base.SendAsync(request, cancellationToken);

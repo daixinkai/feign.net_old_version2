@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Feign.TestWeb
 {
-    [FeignClient("test-service")]
+    [FeignClient("test-service", Url = "http://www.baidu.com")]
     public interface ITestService1
     {
         Task<string> GetHtml();

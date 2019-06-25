@@ -80,6 +80,22 @@ namespace Feign.Tests
         public static IFeignBuilder AddTestFeignClients(this IFeignBuilder feignBuilder)
         {
             feignBuilder.AddFeignClients(Assembly.GetExecutingAssembly(), FeignClientLifetime.Singleton);
+            feignBuilder.Options.FeignClientPipeline.FallbackRequest += (sender, e) =>
+            {
+                var parameters = e.GetParameters();
+                //if (parameters.Count > 0)
+                //{
+                //    var ss = parameters["id"];
+                //    throw new Exception(ss.ToString());
+                //}
+                object fallback = e.Fallback;
+                IFallbackProxy fallbackProxy = e.FallbackProxy;
+                if (fallbackProxy == null)
+                {
+                    string s = "";
+                }
+                MethodInfo method = e.Method;
+            };
             feignBuilder.Options.FeignClientPipeline.Initializing += (sender, e) =>
             {
 

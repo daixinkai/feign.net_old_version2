@@ -13,7 +13,7 @@ namespace Feign
             }
             Name = name;
         }
-        public virtual string Name { get; set; }
+        public virtual string Name { get; }
         public virtual string Url { get; set; }
         public virtual Type Fallback { get; set; }
         public virtual Type FallbackFactory { get; set; }

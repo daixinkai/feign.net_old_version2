@@ -14,5 +14,6 @@ namespace Feign
         event EventHandler<ReceivingResponseEventArgs> ReceivingResponse;
         event EventHandler<InitializingEventArgs> Initializing;
         event EventHandler<DisposingEventArgs> Disposing;
+        event EventHandler<FallbackRequestEventArgs> FallbackRequest;
     }
 }

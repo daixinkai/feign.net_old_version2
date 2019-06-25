@@ -1,5 +1,6 @@
 ﻿using Feign.Cache;
 using Feign.Discovery;
+using Feign.Formatting;
 using Feign.Internal;
 using Feign.Logging;
 using System;
@@ -55,11 +56,8 @@ namespace Feign.Proxy
 
             InitializingEventArgs initializingEventArgs = new InitializingEventArgs(this);
             initializingEventArgs.HttpClient = HttpClient;
-            _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnInitializing(this, initializingEventArgs);
-            _globalFeignClientPipeline?.OnInitializing(this, initializingEventArgs);
-
+            _globalFeignClientPipeline?.InvokeInitializing(this, initializingEventArgs);
             HttpClient = initializingEventArgs.HttpClient;
-
             if (HttpClient == null)
             {
                 throw new ArgumentNullException(nameof(HttpClient));
@@ -80,7 +78,7 @@ namespace Feign.Proxy
 
         ILogger _logger;
 
-        GlobalFeignClientPipelineBuilder _globalFeignClientPipeline;
+        internal GlobalFeignClientPipelineBuilder _globalFeignClientPipeline;
 
         IFeignOptions _feignOptions;
 
@@ -119,21 +117,11 @@ namespace Feign.Proxy
             return GetResult<TResult>(request, response);
         }
 
-
-        HttpContent GetHttpContent(FeignClientRequest request)
-        {
-            if (request.Content != null)
-            {
-                return new ObjectStringContent(request.Content);
-            }
-            return null;
-        }
-
         HttpResponseMessage GetResponseMessage(FeignClientRequest request)
         {
             try
             {
-                return SendAsync(request, GetHttpContent(request)).GetResult();
+                return SendAsyncInternal(request).GetResult();
             }
             catch (SuspendedRequestException)
             {
@@ -147,11 +135,7 @@ namespace Feign.Proxy
             {
                 #region ErrorRequest
                 ErrorRequestEventArgs errorArgs = new ErrorRequestEventArgs(this, ex);
-                _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
-                if (!errorArgs.ExceptionHandled)
-                {
-                    _globalFeignClientPipeline?.OnErrorRequest(this, errorArgs);
-                }
+                _globalFeignClientPipeline?.InvokeErrorRequest(this, errorArgs);
                 if (errorArgs.ExceptionHandled)
                 {
                     return null;
@@ -165,7 +149,7 @@ namespace Feign.Proxy
         {
             try
             {
-                return await SendAsync(request, GetHttpContent(request));
+                return await SendAsyncInternal(request);
             }
             catch (SuspendedRequestException)
             {
@@ -179,11 +163,7 @@ namespace Feign.Proxy
             {
                 #region ErrorRequest
                 ErrorRequestEventArgs errorArgs = new ErrorRequestEventArgs(this, ex);
-                _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnErrorRequest(this, errorArgs);
-                if (!errorArgs.ExceptionHandled)
-                {
-                    _globalFeignClientPipeline?.OnErrorRequest(this, errorArgs);
-                }
+                _globalFeignClientPipeline?.InvokeErrorRequest(this, errorArgs);
                 if (errorArgs.ExceptionHandled)
                 {
                     return null;
@@ -227,9 +207,10 @@ namespace Feign.Proxy
             ReceivingResponseEventArgs<TResult> receivingResponseEventArgs = new ReceivingResponseEventArgs<TResult>(this, responseMessage);
             _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnReceivingResponse(this, receivingResponseEventArgs);
             _globalFeignClientPipeline?.OnReceivingResponse(this, receivingResponseEventArgs);
-            if (receivingResponseEventArgs.Result != null)
+            //if (receivingResponseEventArgs.Result != null)
+            if (receivingResponseEventArgs._isSetResult)
             {
-                return (TResult)receivingResponseEventArgs.Result;
+                return receivingResponseEventArgs.GetResult<TResult>();
             }
             #endregion
             EnsureSuccess(request, responseMessage);
@@ -242,12 +223,18 @@ namespace Feign.Proxy
                 return (TResult)(object)Task.CompletedTask;
 #endif
             }
-            string text = responseMessage.Content.ReadAsStringAsync().GetResult();
             if (typeof(TResult) == typeof(string))
             {
-                return (TResult)(object)text;
+                return (TResult)(object)responseMessage.Content.ReadAsStringAsync().GetResult();
             }
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<TResult>(text);
+            IMediaTypeFormatter mediaTypeFormatter = _feignOptions.MediaTypeFormatters.FindFormatter(responseMessage.Content.Headers.ContentType?.MediaType);
+            if (mediaTypeFormatter == null)
+            {
+                throw new FeignHttpRequestException(this,
+                 responseMessage.RequestMessage as FeignHttpRequestMessage,
+                 new HttpRequestException($"Content type '{responseMessage.Content.Headers.ContentType.ToString()}' not supported"));
+            }
+            return mediaTypeFormatter.GetResult<TResult>(responseMessage.Content.ReadAsByteArrayAsync().GetResult(), GetEncoding(responseMessage.Content.Headers.ContentType));
         }
 
         async Task<TResult> GetResultAsync<TResult>(FeignClientRequest request, HttpResponseMessage responseMessage)
@@ -260,9 +247,10 @@ namespace Feign.Proxy
             ReceivingResponseEventArgs<TResult> receivingResponseEventArgs = new ReceivingResponseEventArgs<TResult>(this, responseMessage);
             _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnReceivingResponse(this, receivingResponseEventArgs);
             _globalFeignClientPipeline?.OnReceivingResponse(this, receivingResponseEventArgs);
-            if (receivingResponseEventArgs.Result != null)
+            //if (receivingResponseEventArgs.Result != null)
+            if (receivingResponseEventArgs._isSetResult)
             {
-                return (TResult)receivingResponseEventArgs.Result;
+                return receivingResponseEventArgs.GetResult<TResult>();
             }
             #endregion
             await EnsureSuccessAsync(request, responseMessage);
@@ -275,24 +263,61 @@ namespace Feign.Proxy
                 return (TResult)(object)Task.CompletedTask;
 #endif
             }
-            string text = await responseMessage.Content.ReadAsStringAsync();
             if (typeof(TResult) == typeof(string))
             {
-                return (TResult)(object)text;
+                return (TResult)(object)await responseMessage.Content.ReadAsStringAsync();
             }
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<TResult>(text);
+            IMediaTypeFormatter mediaTypeFormatter = _feignOptions.MediaTypeFormatters.FindFormatter(responseMessage.Content.Headers.ContentType?.MediaType);
+            if (mediaTypeFormatter == null)
+            {
+                throw new FeignHttpRequestException(this,
+                     responseMessage.RequestMessage as FeignHttpRequestMessage,
+                     new HttpRequestException($"Content type '{responseMessage.Content.Headers.ContentType.ToString()}' not supported"));
+            }
+            return mediaTypeFormatter.GetResult<TResult>(await responseMessage.Content.ReadAsByteArrayAsync(), GetEncoding(responseMessage.Content.Headers.ContentType));
+        }
+
+        Encoding GetEncoding(System.Net.Http.Headers.MediaTypeHeaderValue mediaTypeHeaderValue)
+        {
+            string charset = mediaTypeHeaderValue?.CharSet;
+
+            // If we do have encoding information in the 'Content-Type' header, use that information to convert
+            // the content to a string.
+            if (charset != null)
+            {
+                try
+                {
+                    // Remove at most a single set of quotes.
+                    if (charset.Length > 2 &&
+                        charset[0] == '\"' &&
+                        charset[charset.Length - 1] == '\"')
+                    {
+                        return Encoding.GetEncoding(charset.Substring(1, charset.Length - 2));
+                    }
+                    else
+                    {
+                        return Encoding.GetEncoding(charset);
+                    }
+                }
+                catch (ArgumentException e)
+                {
+                    throw new InvalidOperationException("The character set provided in ContentType is invalid. Cannot read content as string using an invalid character set.", e);
+                }
+            }
+            return null;
         }
 
         #endregion
 
-        Task<HttpResponseMessage> SendAsync(FeignClientRequest request, HttpContent httpContent)
+        Task<HttpResponseMessage> SendAsyncInternal(FeignClientRequest request)
         {
             HttpMethod httpMethod = GetHttpMethod(request.Method);
             HttpRequestMessage httpRequestMessage = CreateRequestMessage(request, httpMethod, CreateUri(BuildUri(request.Uri)));
-            if (httpContent != null)
+            // if support content
+            if (httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put)
             {
-                // if support content
-                if (httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put)
+                HttpContent httpContent = request.GetHttpContent(_feignOptions.MediaTypeFormatters);
+                if (httpContent != null)
                 {
                     httpRequestMessage.Content = httpContent;
                 }
@@ -332,8 +357,12 @@ namespace Feign.Proxy
             }
             return httpMethod;
         }
-        private HttpRequestMessage CreateRequestMessage(FeignClientRequest request, HttpMethod method, Uri uri) =>
-            new FeignHttpRequestMessage(request, method, uri);
+        private HttpRequestMessage CreateRequestMessage(FeignClientRequest request, HttpMethod method, Uri uri)
+        {
+            FeignHttpRequestMessage requestMessage = new FeignHttpRequestMessage(request, method, uri);
+            return requestMessage;
+        }
+
         private Uri CreateUri(string uri) =>
             string.IsNullOrEmpty(uri) ? null : new Uri(uri, UriKind.RelativeOrAbsolute);
 
@@ -354,8 +383,7 @@ namespace Feign.Proxy
             if (!disposedValue)
             {
                 DisposingEventArgs disposingEventArgs = new DisposingEventArgs(this, disposing);
-                _globalFeignClientPipeline?.GetServicePipeline(this.ServiceId)?.OnDisposing(this, disposingEventArgs);
-                _globalFeignClientPipeline?.OnDisposing(this, disposingEventArgs);
+                _globalFeignClientPipeline?.InvokeDisposing(this, disposingEventArgs);
                 if (disposing)
                 {
                     // TODO: 释放托管状态(托管对象)。

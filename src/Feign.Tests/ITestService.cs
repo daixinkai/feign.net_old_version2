@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Feign.Tests
 {
     [CustomFeignClient("yun-platform-service-provider"
-        //, Fallback = typeof(TestServiceFallback)
+        , Fallback = typeof(TestServiceFallback)
         //, FallbackFactory = typeof(TestServiceFallbackFactory)
         //, Url = "http://localhost:8802/"
         //, Url = "http://10.1.5.90:8802/"
@@ -18,7 +18,7 @@ namespace Feign.Tests
 
         //string Name { get; }
 
-        [RequestMapping("/{id}", Method = "POST")]
+        [RequestMapping("/{id}/asdasdsad", Method = "POST")]
         Task PostValueAsync();
 
         [RequestMapping("/{id}", Method = "GET")]
