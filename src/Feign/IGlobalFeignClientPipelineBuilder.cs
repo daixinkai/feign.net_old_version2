@@ -8,5 +8,7 @@ namespace Feign
     {
         IServiceFeignClientPipelineBuilder GetServicePipeline(string serviceId);
         IServiceFeignClientPipelineBuilder GetOrAddServicePipeline(string serviceId);
+        IServiceFeignClientPipelineBuilder GetServicePipeline<TService>();
+        IServiceFeignClientPipelineBuilder GetOrAddServicePipeline<TService>();
     }
 }

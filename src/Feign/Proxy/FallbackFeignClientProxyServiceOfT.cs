@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Proxy
 {
-    public abstract class FallbackFeignClientProxyService<TService, TFallback> : FallbackFeignClientProxyService, IFallbackFeignClient<TService>
+    public abstract class FallbackFeignClientProxyService<TService, TFallback> : FallbackFeignClientProxyService, IFallbackFeignClient<TService>, IFeignClient<TService>
       where TFallback : TService
     {
         public FallbackFeignClientProxyService(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, TFallback fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory, fallback)

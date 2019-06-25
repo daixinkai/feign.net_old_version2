@@ -7,22 +7,41 @@ namespace Feign
 {
     class GlobalFeignClientPipelineBuilder : FeignClientPipelineBuilderBase, IGlobalFeignClientPipelineBuilder
     {
-        IDictionary<string, ServiceFeignClientPipelineBuilder> _servicePipelineBuilderMap = new Dictionary<string, ServiceFeignClientPipelineBuilder>();
-        public ServiceFeignClientPipelineBuilder GetServicePipeline(string serviceId)
+        IDictionary<string, ServiceIdFeignClientPipelineBuilder> _serviceIdPipelineBuilderMap = new Dictionary<string, ServiceIdFeignClientPipelineBuilder>();
+        IDictionary<Type, ServiceTypeFeignClientPipelineBuilder> _serviceTypePipelineBuilderMap = new Dictionary<Type, ServiceTypeFeignClientPipelineBuilder>();
+        public ServiceIdFeignClientPipelineBuilder GetServicePipeline(string serviceId)
         {
-            ServiceFeignClientPipelineBuilder serviceFeignClientPipeline;
-            _servicePipelineBuilderMap.TryGetValue(serviceId, out serviceFeignClientPipeline);
+            ServiceIdFeignClientPipelineBuilder serviceFeignClientPipeline;
+            _serviceIdPipelineBuilderMap.TryGetValue(serviceId, out serviceFeignClientPipeline);
             return serviceFeignClientPipeline;
         }
-        public ServiceFeignClientPipelineBuilder GetOrAddServicePipeline(string serviceId)
+        public ServiceIdFeignClientPipelineBuilder GetOrAddServicePipeline(string serviceId)
         {
-            ServiceFeignClientPipelineBuilder serviceFeignClientPipeline;
-            if (_servicePipelineBuilderMap.TryGetValue(serviceId, out serviceFeignClientPipeline))
+            ServiceIdFeignClientPipelineBuilder serviceFeignClientPipeline;
+            if (_serviceIdPipelineBuilderMap.TryGetValue(serviceId, out serviceFeignClientPipeline))
             {
                 return serviceFeignClientPipeline;
             }
-            serviceFeignClientPipeline = new ServiceFeignClientPipelineBuilder(serviceId);
-            _servicePipelineBuilderMap[serviceId] = serviceFeignClientPipeline;
+            serviceFeignClientPipeline = new ServiceIdFeignClientPipelineBuilder(serviceId);
+            _serviceIdPipelineBuilderMap[serviceId] = serviceFeignClientPipeline;
+            return serviceFeignClientPipeline;
+        }
+
+        public ServiceTypeFeignClientPipelineBuilder GetServicePipeline<TService>()
+        {
+            ServiceTypeFeignClientPipelineBuilder serviceFeignClientPipeline;
+            _serviceTypePipelineBuilderMap.TryGetValue(typeof(TService), out serviceFeignClientPipeline);
+            return serviceFeignClientPipeline;
+        }
+        public ServiceTypeFeignClientPipelineBuilder GetOrAddServicePipeline<TService>()
+        {
+            ServiceTypeFeignClientPipelineBuilder serviceFeignClientPipeline;
+            if (_serviceTypePipelineBuilderMap.TryGetValue(typeof(TService), out serviceFeignClientPipeline))
+            {
+                return serviceFeignClientPipeline;
+            }
+            serviceFeignClientPipeline = new ServiceTypeFeignClientPipelineBuilder(typeof(TService));
+            _serviceTypePipelineBuilderMap[typeof(TService)] = serviceFeignClientPipeline;
             return serviceFeignClientPipeline;
         }
 
@@ -79,6 +98,15 @@ namespace Feign
         IServiceFeignClientPipelineBuilder IGlobalFeignClientPipelineBuilder.GetOrAddServicePipeline(string serviceId)
         {
             return GetOrAddServicePipeline(serviceId);
+        }
+        IServiceFeignClientPipelineBuilder IGlobalFeignClientPipelineBuilder.GetServicePipeline<TService>()
+        {
+            return GetServicePipeline<TService>();
+        }
+
+        IServiceFeignClientPipelineBuilder IGlobalFeignClientPipelineBuilder.GetOrAddServicePipeline<TService>()
+        {
+            return GetOrAddServicePipeline<TService>();
         }
     }
 }

@@ -29,6 +29,18 @@ namespace Feign
             return globalFeignClientPipelineBuilder.GetOrAddServicePipeline(serviceId);
         }
 
+
+        /// <summary>
+        /// Gets the specified service Pipeline
+        /// </summary>
+        /// <param name="globalFeignClientPipelineBuilder"></param>
+        /// <param name="serviceId"></param>
+        /// <returns></returns>
+        public static IServiceFeignClientPipelineBuilder Service<TService>(this IGlobalFeignClientPipelineBuilder globalFeignClientPipelineBuilder)
+        {
+            return globalFeignClientPipelineBuilder.GetOrAddServicePipeline<TService>();
+        }
+
         #region Authorization
         public static T Authorization<T>(this T feignClientPipeline, AuthenticationHeaderValue authenticationHeaderValue) where T : IFeignClientPipelineBuilder
         {
