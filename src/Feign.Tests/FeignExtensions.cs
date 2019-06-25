@@ -11,71 +11,6 @@ namespace Feign.Tests
 {
     public static class FeignExtensions
     {
-        public static void ReceivingQueryResult(this IGlobalFeignClientPipelineBuilder globalFeignClient)
-        {
-            globalFeignClient.ReceivingResponse += (sender, e) =>
-            {
-                if (!typeof(QueryResult).IsAssignableFrom(e.ResultType))
-                {
-                    return;
-                }
-                if (e.ResultType == typeof(QueryResult))
-                {
-                    e.Result = new QueryResult()
-                    {
-                        StatusCode = e.ResponseMessage.StatusCode
-                    };
-                    return;
-                }
-
-                if (e.ResultType.IsGenericType && e.ResultType.GetGenericTypeDefinition() == typeof(QueryResult<>))
-                {
-                    QueryResult queryResult;
-                    if (e.ResponseMessage.IsSuccessStatusCode)
-                    {
-                        string json = e.ResponseMessage.Content.ReadAsStringAsync().Result;
-                        object data = Newtonsoft.Json.JsonConvert.DeserializeObject(json, e.ResultType.GetGenericArguments()[0]);
-                        queryResult = InvokeQueryResultConstructor(data.GetType(), data);
-                    }
-                    else
-                    {
-                        queryResult = InvokeQueryResultConstructor(e.ResultType.GetGenericArguments()[0]);
-                    }
-                    queryResult.StatusCode = e.ResponseMessage.StatusCode;
-                    e.Result = queryResult;
-                }
-
-            };
-        }
-
-        static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, Func<object, QueryResult>> _newQueryResultMap = new System.Collections.Concurrent.ConcurrentDictionary<Type, Func<object, QueryResult>>();
-
-        static Func<QueryResult> _queryResultFunc;
-
-        static QueryResult InvokeQueryResultConstructor(Type type, object value)
-        {
-            Func<object, QueryResult> func = _newQueryResultMap.GetOrAdd(type, key =>
-            {
-                Type queryResultType = typeof(QueryResult<>).MakeGenericType(key);
-                ConstructorInfo constructor = queryResultType.GetConstructor(new Type[] { key });
-                ParameterExpression parameter = Expression.Parameter(typeof(object));
-                NewExpression constructorExpression = Expression.New(constructor, Expression.Convert(parameter, key));
-                return Expression.Lambda<Func<object, QueryResult>>(constructorExpression, parameter).Compile();
-            });
-            return func.Invoke(value);
-        }
-
-        static QueryResult InvokeQueryResultConstructor(Type type)
-        {
-            if (_queryResultFunc == null)
-            {
-                Type queryResultType = typeof(QueryResult<>).MakeGenericType(type);
-                ConstructorInfo constructor = queryResultType.GetConstructor(Type.EmptyTypes);
-                NewExpression constructorExpression = Expression.New(constructor);
-                _queryResultFunc = Expression.Lambda<Func<QueryResult>>(constructorExpression).Compile();
-            }
-            return _queryResultFunc.Invoke();
-        }
 
         public static IFeignBuilder AddTestFeignClients(this IFeignBuilder feignBuilder)
         {
@@ -95,14 +30,19 @@ namespace Feign.Tests
                     string s = "";
                 }
                 MethodInfo method = e.Method;
+                e.Terminate();
             };
             feignBuilder.Options.FeignClientPipeline.Initializing += (sender, e) =>
             {
 
             };
+            feignBuilder.Options.FeignClientPipeline.Service("yun-platform-service-provider").Initializing += (sender, e) =>
+            {
+                
+            };
             feignBuilder.Options.FeignClientPipeline.Disposing += (sender, e) =>
             {
-
+                
             };
             feignBuilder.Options.FeignClientPipeline.Authorization(proxy =>
             {
@@ -167,6 +107,73 @@ namespace Feign.Tests
         private static void FeignClientPipeline_SendingRequest(object sender, SendingRequestEventArgs e)
         {
             //e.SuspendRequest();
+        }
+
+
+        public static void ReceivingQueryResult(this IGlobalFeignClientPipelineBuilder globalFeignClient)
+        {
+            globalFeignClient.ReceivingResponse += (sender, e) =>
+            {
+                if (!typeof(QueryResult).IsAssignableFrom(e.ResultType))
+                {
+                    return;
+                }
+                if (e.ResultType == typeof(QueryResult))
+                {
+                    e.Result = new QueryResult()
+                    {
+                        StatusCode = e.ResponseMessage.StatusCode
+                    };
+                    return;
+                }
+
+                if (e.ResultType.IsGenericType && e.ResultType.GetGenericTypeDefinition() == typeof(QueryResult<>))
+                {
+                    QueryResult queryResult;
+                    if (e.ResponseMessage.IsSuccessStatusCode)
+                    {
+                        string json = e.ResponseMessage.Content.ReadAsStringAsync().Result;
+                        object data = Newtonsoft.Json.JsonConvert.DeserializeObject(json, e.ResultType.GetGenericArguments()[0]);
+                        queryResult = InvokeQueryResultConstructor(data.GetType(), data);
+                    }
+                    else
+                    {
+                        queryResult = InvokeQueryResultConstructor(e.ResultType.GetGenericArguments()[0]);
+                    }
+                    queryResult.StatusCode = e.ResponseMessage.StatusCode;
+                    e.Result = queryResult;
+                }
+
+            };
+        }
+
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, Func<object, QueryResult>> _newQueryResultMap = new System.Collections.Concurrent.ConcurrentDictionary<Type, Func<object, QueryResult>>();
+
+        static Func<QueryResult> _queryResultFunc;
+
+        static QueryResult InvokeQueryResultConstructor(Type type, object value)
+        {
+            Func<object, QueryResult> func = _newQueryResultMap.GetOrAdd(type, key =>
+            {
+                Type queryResultType = typeof(QueryResult<>).MakeGenericType(key);
+                ConstructorInfo constructor = queryResultType.GetConstructor(new Type[] { key });
+                ParameterExpression parameter = Expression.Parameter(typeof(object));
+                NewExpression constructorExpression = Expression.New(constructor, Expression.Convert(parameter, key));
+                return Expression.Lambda<Func<object, QueryResult>>(constructorExpression, parameter).Compile();
+            });
+            return func.Invoke(value);
+        }
+
+        static QueryResult InvokeQueryResultConstructor(Type type)
+        {
+            if (_queryResultFunc == null)
+            {
+                Type queryResultType = typeof(QueryResult<>).MakeGenericType(type);
+                ConstructorInfo constructor = queryResultType.GetConstructor(Type.EmptyTypes);
+                NewExpression constructorExpression = Expression.New(constructor);
+                _queryResultFunc = Expression.Lambda<Func<QueryResult>>(constructorExpression).Compile();
+            }
+            return _queryResultFunc.Invoke();
         }
 
     }

@@ -44,19 +44,5 @@ namespace Feign.Reflection
             TypeBuilder typeBuilder = CreateTypeBuilder(moduleBuilder, fullName, null);
             return FillType(typeBuilder, comparer);
         }
-
-        static TypeBuilder CreateTypeBuilder(ModuleBuilder moduleBuilder, string typeName, Type parentType)
-        {
-            return moduleBuilder.DefineType(typeName,
-                          //TypeAttributes.Public |
-                          TypeAttributes.NotPublic |
-                          TypeAttributes.Class |
-                          TypeAttributes.AutoClass |
-                          TypeAttributes.AnsiClass |
-                          TypeAttributes.BeforeFieldInit |
-                          TypeAttributes.AutoLayout,
-                          parentType);
-        }
-
     }
 }

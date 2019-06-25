@@ -15,20 +15,41 @@ namespace Feign
             Request = request;
             Fallback = fallback;
             FallbackProxy = fallbackProxy;
-            Method = method;
+            _method = method;
         }
         public FeignClientRequest Request { get; }
         public IFallbackProxy FallbackProxy { get; }
         public object Fallback { get; }
-        public MethodInfo Method { get; }
+        MethodInfo _method;
+        public MethodInfo Method
+        {
+            get
+            {
+                if (_method == null)
+                {
+                    _method = Fallback.GetType().GetMethod(FallbackProxy.MethodName, FallbackProxy.GetParameterTypes());
+                }
+                return _method;
+            }
+        }
 
         public IDictionary<string, object> GetParameters()
         {
-            if (FallbackProxy != null)
-            {
-                return FallbackProxy.GetParameters();
-            }
-            return new Dictionary<string, object>();
+            return FallbackProxy?.GetParameters() ?? new Dictionary<string, object>();
+        }
+
+        public Type[] GetParameterTypes()
+        {
+            return FallbackProxy?.GetParameterTypes() ?? Type.EmptyTypes;
+        }
+
+        public bool IsTerminated => _isTerminated;
+
+        bool _isTerminated;
+
+        public void Terminate()
+        {
+            _isTerminated = true;
         }
 
     }

@@ -57,9 +57,9 @@ namespace Feign
                 #region SendingRequest
                 SendingRequestEventArgs sendingArgs = new SendingRequestEventArgs(_feignClient, feignRequest);
                 _globalFeignClientPipeline?.InvokeSendingRequest(_feignClient, sendingArgs);
-                if (sendingArgs.IsSuspendRequest)
+                if (sendingArgs.IsTerminated)
                 {
-                    throw new SuspendedRequestException();
+                    throw new TerminatedRequestException();
                 }
                 request = sendingArgs.RequestMessage;
                 if (request == null)

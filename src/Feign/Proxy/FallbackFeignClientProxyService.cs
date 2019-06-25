@@ -24,7 +24,7 @@ namespace Feign.Proxy
 
         object IFallbackFeignClient.Fallback => _fallback;
 
-        protected override bool IsResponseSuspendedRequest => false;
+        protected override bool IsResponseTerminatedRequest => false;
 
         #region Send Request
 
@@ -42,7 +42,7 @@ namespace Feign.Proxy
             {
                 await SendAsync(request);
             }
-            catch (SuspendedRequestException)
+            catch (TerminatedRequestException)
             {
                 return;
             }
@@ -52,7 +52,10 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
-                InvokeFallbackRequestPipeline(request, fallback);
+                if (InvokeFallbackRequestPipeline(request, fallback))
+                {
+                    throw;
+                }
                 await fallback.Invoke();
             }
         }
@@ -62,7 +65,7 @@ namespace Feign.Proxy
             {
                 return await SendAsync<TResult>(request);
             }
-            catch (SuspendedRequestException)
+            catch (TerminatedRequestException)
             {
                 return default(TResult);
             }
@@ -72,7 +75,10 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
-                InvokeFallbackRequestPipeline(request, fallback);
+                if (InvokeFallbackRequestPipeline(request, fallback))
+                {
+                    throw;
+                }
                 return await fallback.Invoke();
             }
         }
@@ -82,7 +88,7 @@ namespace Feign.Proxy
             {
                 Send(request);
             }
-            catch (SuspendedRequestException)
+            catch (TerminatedRequestException)
             {
                 return;
             }
@@ -92,7 +98,10 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
-                InvokeFallbackRequestPipeline(request, fallback);
+                if (InvokeFallbackRequestPipeline(request, fallback))
+                {
+                    throw;
+                }
                 fallback.Invoke();
             }
         }
@@ -102,7 +111,7 @@ namespace Feign.Proxy
             {
                 return Send<TResult>(request);
             }
-            catch (SuspendedRequestException)
+            catch (TerminatedRequestException)
             {
                 return default(TResult);
             }
@@ -112,16 +121,30 @@ namespace Feign.Proxy
                 {
                     throw;
                 }
-                InvokeFallbackRequestPipeline(request, fallback);
+                if (InvokeFallbackRequestPipeline(request, fallback))
+                {
+                    throw;
+                }
                 return fallback.Invoke();
             }
         }
         #endregion
 
-        void InvokeFallbackRequestPipeline(FeignClientRequest request, Delegate @delegate)
+        bool InvokeFallbackRequestPipeline(FeignClientRequest request, Delegate @delegate)
         {
-            FallbackRequestEventArgs eventArgs = new FallbackRequestEventArgs(this, request, _fallback, @delegate.Target as IFallbackProxy, @delegate.Method);
+            IFallbackProxy fallbackProxy = @delegate.Target as IFallbackProxy;
+            FallbackRequestEventArgs eventArgs;
+            if (fallbackProxy == null)
+            {
+                //可能因为method parameters length=0 , 故没有生成匿名调用类
+                eventArgs = new FallbackRequestEventArgs(this, request, _fallback, null, @delegate.Method);
+            }
+            else
+            {
+                eventArgs = new FallbackRequestEventArgs(this, request, _fallback, fallbackProxy, null);
+            }
             _globalFeignClientPipeline.InvokeFallbackRequest(this, eventArgs);
+            return eventArgs.IsTerminated;
         }
 
     }

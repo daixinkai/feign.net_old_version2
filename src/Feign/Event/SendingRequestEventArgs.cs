@@ -13,13 +13,13 @@ namespace Feign
         }
         public FeignHttpRequestMessage RequestMessage { get; }
 
-        public bool IsSuspendRequest => _isSuspendRequest;
+        public bool IsTerminated => _isTerminated;
 
-        bool _isSuspendRequest;
+        bool _isTerminated;
 
-        public void SuspendRequest()
+        public void Terminate()
         {
-            _isSuspendRequest = true;
+            _isTerminated = true;
         }
 
     }

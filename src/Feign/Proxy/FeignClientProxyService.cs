@@ -68,7 +68,7 @@ namespace Feign.Proxy
 
         public abstract string ServiceId { get; }
 
-        protected virtual bool IsResponseSuspendedRequest => true;
+        protected virtual bool IsResponseTerminatedRequest => true;
 
         public virtual string BaseUri { get { return null; } }
 
@@ -123,9 +123,9 @@ namespace Feign.Proxy
             {
                 return SendAsyncInternal(request).GetResult();
             }
-            catch (SuspendedRequestException)
+            catch (TerminatedRequestException)
             {
-                if (IsResponseSuspendedRequest)
+                if (IsResponseTerminatedRequest)
                 {
                     return null;
                 }
@@ -151,9 +151,9 @@ namespace Feign.Proxy
             {
                 return await SendAsyncInternal(request);
             }
-            catch (SuspendedRequestException)
+            catch (TerminatedRequestException)
             {
-                if (IsResponseSuspendedRequest)
+                if (IsResponseTerminatedRequest)
                 {
                     return null;
                 }
