@@ -1,4 +1,5 @@
 ﻿using Feign.Fallback;
+using Feign.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Reflection
 {
-    class FallbackAnonymousMethodClassBuilder : AnonymousMethodClassBuilderBase
+    class FallbackProxyAnonymousMethodClassBuilder : AnonymousMethodClassBuilderBase
     {
 
         static readonly System.Collections.Concurrent.ConcurrentDictionary<Comparer, Tuple<Type, ConstructorInfo, MethodInfo>> _map = new System.Collections.Concurrent.ConcurrentDictionary<Comparer, Tuple<Type, ConstructorInfo, MethodInfo>>();
@@ -30,7 +31,7 @@ namespace Feign.Reflection
             return _map.GetOrAdd(comparer, key =>
             {
                 string typeName = comparer.TargetType.Name;
-                typeName += "_" + Guid.NewGuid().ToString("N");
+                typeName += "_" + Guid.NewGuid().ToString("N").ToUpper();
                 return BuildNewType(moduleBuilder, typeName, comparer.TargetType.Namespace + ".Anonymous", comparer);
             });
         }
@@ -46,6 +47,7 @@ namespace Feign.Reflection
             // field
             ParameterInfo[] parameters = comparer.Parameters ?? comparer.Method.GetParameters();
             List<FieldBuilder> fieldBuilders = new List<FieldBuilder>();
+            List<FieldBuilder> parameterFields = new List<FieldBuilder>();
             if (!comparer.Method.IsStatic)
             {
                 if (comparer.TargetType == null)
@@ -56,15 +58,20 @@ namespace Feign.Reflection
             }
             for (int i = 0; i < parameters.Length; i++)
             {
-                fieldBuilders.Add(CreateField(typeBuilder, "_" + parameters[i].Name, parameters[i].ParameterType));
+                var fieldBuilder = CreateField(typeBuilder, "_" + parameters[i].Name, parameters[i].ParameterType);
+                fieldBuilders.Add(fieldBuilder);
+                parameterFields.Add(fieldBuilder);
             }
+            ////add methodInfo
+            //fieldBuilders.Add(CreateField(typeBuilder, "_" + Guid.NewGuid().ToString("N"), typeof(MethodInfo)));
 
             //constructor
             ConstructorBuilder constructorBuilder = CreateConstructor(typeBuilder, fieldBuilders);
             MethodBuilder methodBuilder = CreateMethod(typeBuilder, comparer.Method, fieldBuilders);
             typeBuilder.AddInterfaceImplementation(typeof(IFallbackProxy));
             //IFallbackTarget
-            AddFallbackTarget_GetParameters(typeBuilder, parameters, fieldBuilders);
+
+            AddFallbackTarget_GetParameters(typeBuilder, parameters, parameterFields);
             AddFallbackTarget_GetParameterTypes(typeBuilder, parameters);
             AddFallbackTarget_MethodName(typeBuilder, comparer.Method.Name);
             AddFallbackTarget_ReturnType(typeBuilder, comparer.Method.ReturnType);
@@ -88,37 +95,18 @@ namespace Feign.Reflection
             //iLGenerator.Emit(OpCodes.Pop);
             MethodInfo addMethod = typeof(IDictionary<string, object>).GetMethod("Add", new Type[] { typeof(string), typeof(object) });
 
-            if (parameters.Length != parameterFields.Count)
+            for (int i = 0; i < parameterFields.Count; i++)
             {
-                for (int i = 1; i < parameterFields.Count; i++)
+                iLGenerator.Emit(OpCodes.Ldloc, map);
+                iLGenerator.Emit(OpCodes.Ldstr, parameters[i].Name);
+                iLGenerator.Emit(OpCodes.Ldarg_0);
+                iLGenerator.Emit(OpCodes.Ldfld, parameterFields[i]);
+                if (parameterFields[i].FieldType.IsValueType)
                 {
-                    iLGenerator.Emit(OpCodes.Ldloc, map);
-                    iLGenerator.Emit(OpCodes.Ldstr, parameters[i - 1].Name);
-                    iLGenerator.Emit(OpCodes.Ldarg_0);
-                    iLGenerator.Emit(OpCodes.Ldfld, parameterFields[i]);
-                    if (typeof(ValueType).IsAssignableFrom(parameterFields[i].FieldType))
-                    {
-                        iLGenerator.Emit(OpCodes.Box, parameterFields[i].FieldType);
-                    }
-                    iLGenerator.Emit(OpCodes.Call, addMethod);
+                    iLGenerator.Emit(OpCodes.Box, parameterFields[i].FieldType);
                 }
+                iLGenerator.Emit(OpCodes.Call, addMethod);
             }
-            else
-            {
-                for (int i = 0; i < parameterFields.Count; i++)
-                {
-                    iLGenerator.Emit(OpCodes.Ldloc, map);
-                    iLGenerator.Emit(OpCodes.Ldstr, parameters[i].Name);
-                    iLGenerator.Emit(OpCodes.Ldarg_0);
-                    iLGenerator.Emit(OpCodes.Ldfld, parameterFields[i]);
-                    if (typeof(ValueType).IsAssignableFrom(parameterFields[i].FieldType))
-                    {
-                        iLGenerator.Emit(OpCodes.Box, parameterFields[i].FieldType);
-                    }
-                    iLGenerator.Emit(OpCodes.Call, addMethod);
-                }
-            }
-
 
             iLGenerator.Emit(OpCodes.Ldloc, map);
             iLGenerator.Emit(OpCodes.Ret);
@@ -141,16 +129,12 @@ namespace Feign.Reflection
             iLGenerator.Emit(OpCodes.Newarr, typeof(Type));
             iLGenerator.Emit(OpCodes.Stloc, types);
 
-            var getTypeMethod = typeof(Type).GetMethod("GetTypeFromHandle");
-
-
 
             for (int i = 0; i < parameters.Length; i++)
             {
                 iLGenerator.Emit(OpCodes.Ldloc, types);
                 iLGenerator.Emit(OpCodes.Ldc_I4, i);
-                iLGenerator.Emit(OpCodes.Ldtoken, parameters[i].ParameterType);
-                iLGenerator.Emit(OpCodes.Call, getTypeMethod);
+                ReflectionHelper.EmitType(iLGenerator, parameters[i].ParameterType);
                 iLGenerator.Emit(OpCodes.Stelem_Ref);
             }
 
@@ -189,6 +173,16 @@ namespace Feign.Reflection
                 //iLGenerator.Emit(OpCodes.Ldloc_0);
                 iLGenerator.Emit(OpCodes.Ret);
             }
+            propertyBuilder.SetGetMethod(propertyGet);
+        }
+
+        static void AddFallbackTarget_Method(TypeBuilder typeBuilder, MethodInfo method)
+        {
+            PropertyBuilder propertyBuilder = typeBuilder.DefineProperty("Method", PropertyAttributes.None, typeof(MethodInfo), Type.EmptyTypes);
+            MethodBuilder propertyGet = typeBuilder.DefineMethod("get_Method", MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, typeof(MethodInfo), Type.EmptyTypes);
+            ILGenerator iLGenerator = propertyGet.GetILGenerator();
+            ReflectionHelper.EmitMethodInfo(iLGenerator, method);
+            iLGenerator.Emit(OpCodes.Ret);
             propertyBuilder.SetGetMethod(propertyGet);
         }
 

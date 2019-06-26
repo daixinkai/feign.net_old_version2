@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,14 +13,15 @@ namespace Feign
 {
     public class FeignClientRequest
     {
-        public FeignClientRequest(string baseUrl, string mappingUri, string uri, string method, string contentType, object content)
+        public FeignClientRequest(string baseUrl, string mappingUri, string uri, string httpMethod, string contentType, object content, MethodInfo method)
         {
             BaseUrl = baseUrl;
             MappingUri = mappingUri;
             Uri = uri;
-            Method = method;
+            HttpMethod = httpMethod;
             ContentType = contentType;
             Content = content;
+            Method = method;
             if (string.IsNullOrWhiteSpace(ContentType))
             {
                 ContentType = "application/json; charset=utf-8";
@@ -34,11 +36,11 @@ namespace Feign
         public string BaseUrl { get; }
         public string MappingUri { get; }
         public string Uri { get; }
-        public string Method { get; }
+        public string HttpMethod { get; }
         public string ContentType { get; }
         public string MediaType { get; }
         public object Content { get; }
-
+        public MethodInfo Method { get; }
         public HttpContent GetHttpContent(MediaTypeFormatterCollection mediaTypeFormatters)
         {
             if (Content != null)

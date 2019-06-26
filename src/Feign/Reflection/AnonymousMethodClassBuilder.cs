@@ -29,7 +29,7 @@ namespace Feign.Reflection
             return _map.GetOrAdd(comparer, key =>
             {
                 string typeName = comparer.TargetType.Name;
-                typeName += "_" + Guid.NewGuid().ToString("N");
+                typeName += "_" + Guid.NewGuid().ToString("N").ToUpper();
                 return BuildNewType(moduleBuilder, typeName, comparer.TargetType.Namespace + ".Anonymous", comparer);
             });
         }

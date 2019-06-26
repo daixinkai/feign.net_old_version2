@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Feign.Internal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -84,6 +85,7 @@ namespace Feign.Reflection
 
         protected static ConstructorBuilder CreateConstructor(TypeBuilder typeBuilder, List<FieldBuilder> fieldBuilders)
         {
+            List<Type> types = fieldBuilders.Select(s => s.FieldType).ToList();
             ConstructorBuilder constructorBuilder = typeBuilder.DefineConstructor(
                MethodAttributes.Public,
                CallingConventions.Standard,
@@ -105,10 +107,10 @@ namespace Feign.Reflection
 
         protected static MethodBuilder CreateMethod(TypeBuilder typeBuilder, MethodInfo method, List<FieldBuilder> fieldBuilders)
         {
+
             MethodAttributes methodAttributes = MethodAttributes.Public;
             MethodBuilder methodBuilder = typeBuilder.DefineMethod(method.Name, methodAttributes, CallingConventions.Standard, method.ReturnType, Type.EmptyTypes);
             ILGenerator iLGenerator = methodBuilder.GetILGenerator();
-
             if (fieldBuilders.Count > 0)
             {
                 for (int i = 0; i < fieldBuilders.Count; i++)

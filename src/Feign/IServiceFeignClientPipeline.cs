@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Feign
 {
-    public interface IServiceFeignClientPipelineBuilder : IFeignClientPipelineBuilder
+    public interface IServiceFeignClientPipeline : IFeignClientPipeline
     {
     }
 }

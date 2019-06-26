@@ -9,21 +9,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Feign
+namespace Feign.Proxy
 {
-    public class FeignHttpClientHandler : HttpClientHandler
+    public class FeignProxyHttpClientHandler : HttpClientHandler
     {
         private readonly ILogger _logger;
-        private GlobalFeignClientPipelineBuilder _globalFeignClientPipeline;
-        private IFeignClient _feignClient;
-
+        private FeignClientHttpProxy _feignClient;
         /// <summary>
         /// Initializes a new instance of the <see cref="FeignHttpClientHandler"/> class.
         /// </summary>
-        public FeignHttpClientHandler(IFeignClient feignClient, IGlobalFeignClientPipelineBuilder globalFeignClientPipeline, ILogger logger)
+        public FeignProxyHttpClientHandler(FeignClientHttpProxy feignClient, ILogger logger)
         {
             _feignClient = feignClient;
-            _globalFeignClientPipeline = globalFeignClientPipeline as GlobalFeignClientPipelineBuilder;
             _logger = logger;
         }
 
@@ -42,7 +39,7 @@ namespace Feign
 
                 #region BuildingRequest
                 BuildingRequestEventArgs buildingArgs = new BuildingRequestEventArgs(_feignClient, request.Method.ToString(), request.RequestUri, new Dictionary<string, string>());
-                _globalFeignClientPipeline?.InvokeBuildingRequest(_feignClient, buildingArgs);
+                _feignClient.OnBuildingRequest(buildingArgs);
                 //request.Method = new HttpMethod(buildingArgs.Method);
                 request.RequestUri = buildingArgs.RequestUri;
                 if (buildingArgs.Headers != null && buildingArgs.Headers.Count > 0)
@@ -56,7 +53,7 @@ namespace Feign
                 request.RequestUri = LookupRequestUri(request.RequestUri);
                 #region SendingRequest
                 SendingRequestEventArgs sendingArgs = new SendingRequestEventArgs(_feignClient, feignRequest);
-                _globalFeignClientPipeline?.InvokeSendingRequest(_feignClient, sendingArgs);
+                _feignClient.OnSendingRequest(sendingArgs);
                 if (sendingArgs.IsTerminated)
                 {
                     throw new TerminatedRequestException();
@@ -64,7 +61,6 @@ namespace Feign
                 request = sendingArgs.RequestMessage;
                 if (request == null)
                 {
-                    //TODO:OnSendingRequest
                     _logger?.LogError($"SendingRequest is null;");
                     return new HttpResponseMessage(System.Net.HttpStatusCode.ExpectationFailed)
                     {
@@ -77,7 +73,7 @@ namespace Feign
 
                 #region CannelRequest
                 CancelRequestEventArgs cancelArgs = new CancelRequestEventArgs(_feignClient, cancellationToken);
-                _globalFeignClientPipeline?.InvokeCancelRequest(_feignClient, cancelArgs);
+                _feignClient.OnCancelRequest(cancelArgs);
                 #endregion
 
                 return await base.SendAsync(request, cancellationToken);

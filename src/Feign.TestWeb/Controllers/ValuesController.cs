@@ -25,7 +25,7 @@ namespace Feign.TestWeb.Controllers
         {
 
 
-            string html = await testService1.GetHtml();
+            //  string html = await testService1.GetHtml();
 
             //var rrr = typeof(Func<Task>).GetConstructors(System.Reflection.BindingFlags.Default);
 

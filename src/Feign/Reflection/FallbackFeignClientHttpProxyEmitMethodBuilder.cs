@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace Feign.Reflection
 {
-    class FallbackFeignClientProxyServiceEmitMethodBuilder : FeignClientProxyServiceEmitMethodBuilder
+    class FallbackFeignClientHttpProxyEmitMethodBuilder : FeignClientHttpProxyEmitMethodBuilder
     {
-        public FallbackFeignClientProxyServiceEmitMethodBuilder(DynamicAssembly dynamicAssembly)
+        public FallbackFeignClientHttpProxyEmitMethodBuilder(DynamicAssembly dynamicAssembly)
         {
             _dynamicAssembly = dynamicAssembly;
         }
@@ -27,11 +27,11 @@ namespace Feign.Reflection
             bool isGeneric = !(returnType == null || returnType == typeof(void) || returnType == typeof(Task));
             if (isGeneric)
             {
-                httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_SEND_GENERIC_METHOD_FALLBACK;
+                httpClientMethod = async ? FallbackFeignClientHttpProxy.HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK : FallbackFeignClientHttpProxy.HTTP_SEND_GENERIC_METHOD_FALLBACK;
             }
             else
             {
-                httpClientMethod = async ? FallbackFeignClientProxyService.HTTP_SEND_ASYNC_METHOD_FALLBACK : FallbackFeignClientProxyService.HTTP_SEND_METHOD_FALLBACK;
+                httpClientMethod = async ? FallbackFeignClientHttpProxy.HTTP_SEND_ASYNC_METHOD_FALLBACK : FallbackFeignClientHttpProxy.HTTP_SEND_METHOD_FALLBACK;
             }
             if (isGeneric)
             {
@@ -40,64 +40,24 @@ namespace Feign.Reflection
             return httpClientMethod;
         }
 
-        protected override void BuildMethod(TypeBuilder typeBuilder, Type serviceType, MethodInfo method, FeignClientAttribute feignClientAttribute, RequestMappingBaseAttribute requestMapping)
+        protected override void EmitCallMethod(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type serviceType, MethodInfo method, RequestMappingBaseAttribute requestMapping, LocalBuilder uri, EmitRequestContent emitRequestContent)
         {
-            MethodBuilder methodBuilder = CreateMethodBuilder(typeBuilder, method);
-            ILGenerator iLGenerator = methodBuilder.GetILGenerator();
-            if (requestMapping == null)
-            {
-                iLGenerator.Emit(OpCodes.Newobj, typeof(NotSupportedException).GetConstructor(Type.EmptyTypes));
-                iLGenerator.Emit(OpCodes.Throw);
-                return;
-            }
-
-            string uri = requestMapping.Value ?? "";
-            LocalBuilder local_Uri = iLGenerator.DeclareLocal(typeof(string));
-            LocalBuilder local_OldValue = iLGenerator.DeclareLocal(typeof(string));
-
-            iLGenerator.Emit(OpCodes.Ldstr, uri);
-            iLGenerator.Emit(OpCodes.Stloc, local_Uri);
-
             var invokeMethod = GetInvokeMethod(method, requestMapping);
-            EmitRequestContent emitRequestContent = EmitParameter(iLGenerator, method, local_Uri, local_OldValue);
             if (emitRequestContent.RequestContent != null && !SupportRequestContent(invokeMethod, requestMapping))
             {
                 throw new NotSupportedException("不支持RequestBody或者RequestForm");
             }
-            iLGenerator.Emit(OpCodes.Ldarg_0);  //this
-            //baseUrl
-            EmitBaseUrl(iLGenerator);
-            //mapping uri
-            if (requestMapping.Value == null)
-            {
-                iLGenerator.Emit(OpCodes.Ldnull);
-            }
-            else
-            {
-                iLGenerator.Emit(OpCodes.Ldstr, requestMapping.Value);
-            }
-            iLGenerator.Emit(OpCodes.Ldloc, local_Uri); //uri
-            iLGenerator.Emit(OpCodes.Ldstr, requestMapping.GetMethod()); //method
-            EmitContentType(iLGenerator, serviceType, requestMapping, emitRequestContent); // contentType
-            //content
-            if (emitRequestContent.Content != null)
-            {
-                iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.RequestContentIndex);
-            }
-            else
-            {
-                iLGenerator.Emit(OpCodes.Ldnull);
-            }
-            iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientRequest).GetConstructors()[0]);
+            LocalBuilder feignClientRequest = DefineFeignClientRequest(typeBuilder, serviceType, iLGenerator, uri, requestMapping, emitRequestContent, method);
             // fallback
-            LocalBuilder fallbackDelegate = DefineFallbackDelegate(typeBuilder, methodBuilder, iLGenerator, method);
+            LocalBuilder fallbackDelegate = DefineFallbackDelegate(typeBuilder, methodBuilder, iLGenerator, serviceType, method);
+            iLGenerator.Emit(OpCodes.Ldarg_0);  //this
+            iLGenerator.Emit(OpCodes.Ldloc, feignClientRequest);
             iLGenerator.Emit(OpCodes.Ldloc, fallbackDelegate);
             iLGenerator.Emit(OpCodes.Call, invokeMethod);
             iLGenerator.Emit(OpCodes.Ret);
         }
 
-
-        LocalBuilder DefineFallbackDelegate(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, MethodInfo method)
+        LocalBuilder DefineFallbackDelegate(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type serviceType, MethodInfo method)
         {
             Type delegateType;
             if (method.ReturnType == null || method.ReturnType == typeof(void))
@@ -119,10 +79,7 @@ namespace Feign.Reflection
             // if has parameters
             if (method.GetParameters().Length > 0)
             {
-                //nedd
-                //var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(_dynamicAssembly,typeBuilder, methodBuilder, method.GetParameters());
-                //var anonymousMethodClassTypeBuild = AnonymousMethodClassBuilder.BuildType(_dynamicAssembly.ModuleBuilder, typeBuilder, method);
-                var anonymousMethodClassTypeBuild = FallbackAnonymousMethodClassBuilder.BuildType(_dynamicAssembly.ModuleBuilder, typeBuilder, method);
+                var anonymousMethodClassTypeBuild = FallbackProxyAnonymousMethodClassBuilder.BuildType(_dynamicAssembly.ModuleBuilder, serviceType, method);
                 // new anonymousMethodClass
                 LocalBuilder anonymousMethodClass = iLGenerator.DeclareLocal(anonymousMethodClassTypeBuild.Item1);
                 //field
@@ -133,6 +90,7 @@ namespace Feign.Reflection
                 {
                     iLGenerator.Emit(OpCodes.Ldarg_S, i);
                 }
+
                 iLGenerator.Emit(OpCodes.Newobj, anonymousMethodClassTypeBuild.Item2);
                 iLGenerator.Emit(OpCodes.Stloc, anonymousMethodClass);
                 iLGenerator.Emit(OpCodes.Ldloc, anonymousMethodClass);

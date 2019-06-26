@@ -20,6 +20,10 @@ namespace Feign.Formatting
 
         public HttpContent GetHttpContent(object content)
         {
+            if (content == null)
+            {
+                return null;
+            }
             return new ObjectStringContent(content);
         }
 

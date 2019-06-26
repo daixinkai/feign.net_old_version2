@@ -15,6 +15,10 @@ namespace Feign.Tests
         public static IFeignBuilder AddTestFeignClients(this IFeignBuilder feignBuilder)
         {
             feignBuilder.AddFeignClients(Assembly.GetExecutingAssembly(), FeignClientLifetime.Singleton);
+            feignBuilder.Options.FeignClientPipeline.Service<ITestService>().SendingRequest += (sender, e) =>
+            {
+                //e.Terminate();
+            };
             feignBuilder.Options.FeignClientPipeline.FallbackRequest += (sender, e) =>
             {
                 var parameters = e.GetParameters();
@@ -38,11 +42,11 @@ namespace Feign.Tests
             };
             feignBuilder.Options.FeignClientPipeline.Service("yun-platform-service-provider").Initializing += (sender, e) =>
             {
-                
+
             };
             feignBuilder.Options.FeignClientPipeline.Disposing += (sender, e) =>
             {
-                
+
             };
             feignBuilder.Options.FeignClientPipeline.Authorization(proxy =>
             {
@@ -110,7 +114,7 @@ namespace Feign.Tests
         }
 
 
-        public static void ReceivingQueryResult(this IGlobalFeignClientPipelineBuilder globalFeignClient)
+        public static void ReceivingQueryResult(this IGlobalFeignClientPipeline globalFeignClient)
         {
             globalFeignClient.ReceivingResponse += (sender, e) =>
             {

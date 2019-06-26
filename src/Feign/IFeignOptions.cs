@@ -13,7 +13,7 @@ namespace Feign
         IList<Assembly> Assemblies { get; }
         ConverterCollection Converters { get; }
         MediaTypeFormatterCollection MediaTypeFormatters { get; }
-        IGlobalFeignClientPipelineBuilder FeignClientPipeline { get; }
+        IGlobalFeignClientPipeline FeignClientPipeline { get; }
         FeignClientLifetime Lifetime { get; }
     }
 }

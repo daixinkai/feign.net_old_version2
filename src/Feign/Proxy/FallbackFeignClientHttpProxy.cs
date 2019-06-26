@@ -13,9 +13,9 @@ using System.Threading.Tasks;
 
 namespace Feign.Proxy
 {
-    public abstract class FallbackFeignClientProxyService : FeignClientProxyService, IFallbackFeignClient
+    public abstract class FallbackFeignClientHttpProxy : FeignClientHttpProxy, IFallbackFeignClient
     {
-        public FallbackFeignClientProxyService(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, object fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory)
+        public FallbackFeignClientHttpProxy(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, object fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory)
         {
             _fallback = fallback;
         }
@@ -29,11 +29,11 @@ namespace Feign.Proxy
         #region Send Request
 
         #region define
-        internal static readonly MethodInfo HTTP_SEND_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
-        internal static readonly MethodInfo HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
+        internal static readonly MethodInfo HTTP_SEND_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientHttpProxy).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
+        internal static readonly MethodInfo HTTP_SEND_ASYNC_GENERIC_METHOD_FALLBACK = typeof(FallbackFeignClientHttpProxy).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
 
-        internal static readonly MethodInfo HTTP_SEND_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
-        internal static readonly MethodInfo HTTP_SEND_ASYNC_METHOD_FALLBACK = typeof(FallbackFeignClientProxyService).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
+        internal static readonly MethodInfo HTTP_SEND_METHOD_FALLBACK = typeof(FallbackFeignClientHttpProxy).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "Send");
+        internal static readonly MethodInfo HTTP_SEND_ASYNC_METHOD_FALLBACK = typeof(FallbackFeignClientHttpProxy).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic).Where(o => !o.IsGenericMethod && o.GetParameters().Length == 2).FirstOrDefault(o => o.Name == "SendAsync");
         #endregion
 
         protected async Task SendAsync(FeignClientRequest request, Func<Task> fallback)
@@ -130,6 +130,12 @@ namespace Feign.Proxy
         }
         #endregion
 
+        protected internal virtual void OnFallbackRequest(FallbackRequestEventArgs e)
+        {
+            _serviceIdFeignClientPipeline?.OnFallbackRequest(this, e);
+            _globalFeignClientPipeline?.OnFallbackRequest(this, e);
+        }
+
         bool InvokeFallbackRequestPipeline(FeignClientRequest request, Delegate @delegate)
         {
             IFallbackProxy fallbackProxy = @delegate.Target as IFallbackProxy;
@@ -143,7 +149,7 @@ namespace Feign.Proxy
             {
                 eventArgs = new FallbackRequestEventArgs(this, request, _fallback, fallbackProxy, null);
             }
-            _globalFeignClientPipeline.InvokeFallbackRequest(this, eventArgs);
+            OnFallbackRequest(eventArgs);
             return eventArgs.IsTerminated;
         }
 

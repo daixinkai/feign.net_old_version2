@@ -5,11 +5,13 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Feign.Fallback;
 using Feign.Tests;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Steeltoe.Discovery.Client;
@@ -45,7 +47,7 @@ namespace Feign.TestWeb
             services.AddDiscoveryClient(Configuration);
             services.AddFeignClients()
                 .AddTestFeignClients()
-                //.AddSteeltoeServiceDiscovery()
+                .AddSteeltoeServiceDiscovery()
                 ;
         }
 

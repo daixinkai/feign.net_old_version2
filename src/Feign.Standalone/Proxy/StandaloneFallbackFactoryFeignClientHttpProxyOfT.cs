@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 
 namespace Feign.Standalone.Proxy
 {
-    public abstract class StandaloneFallbackFactoryFeignClientProxyService<TService, TFallbackFactory> : FallbackFactoryFeignClientProxyService<TService, TFallbackFactory>
+    public abstract class StandaloneFallbackFactoryFeignClientHttpProxy<TService, TFallbackFactory> : FallbackFactoryFeignClientHttpProxy<TService, TFallbackFactory>
         where TFallbackFactory : IFallbackFactory<TService>
     {
-        public StandaloneFallbackFactoryFeignClientProxyService() : base(GetService<IFeignOptions>(), GetService<IServiceDiscovery>(), GetService<IServiceCacheProvider>(), GetService<ILoggerFactory>(), GetService<TFallbackFactory>())
+        public StandaloneFallbackFactoryFeignClientHttpProxy() : base(GetService<IFeignOptions>(), GetService<IServiceDiscovery>(), GetService<IServiceCacheProvider>(), GetService<ILoggerFactory>(), GetService<TFallbackFactory>())
         {
         }
 

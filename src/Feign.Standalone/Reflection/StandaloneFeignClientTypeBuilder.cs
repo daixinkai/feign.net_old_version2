@@ -14,15 +14,15 @@ namespace Feign.Standalone.Reflection
     {
         protected override Type GetParentType(Type parentType)
         {
-            if (typeof(FallbackFactoryFeignClientProxyService<,>) == parentType.GetGenericTypeDefinition())
+            if (typeof(FallbackFactoryFeignClientHttpProxy<,>) == parentType.GetGenericTypeDefinition())
             {
-                return typeof(StandaloneFallbackFactoryFeignClientProxyService<,>).MakeGenericType(parentType.GetGenericArguments());
+                return typeof(StandaloneFallbackFactoryFeignClientHttpProxy<,>).MakeGenericType(parentType.GetGenericArguments());
             }
-            if (typeof(FallbackFeignClientProxyService<,>) == parentType.GetGenericTypeDefinition())
+            if (typeof(FallbackFeignClientHttpProxy<,>) == parentType.GetGenericTypeDefinition())
             {
-                return typeof(StandaloneFallbackFeignClientProxyService<,>).MakeGenericType(parentType.GetGenericArguments());
+                return typeof(StandaloneFallbackFeignClientHttpProxy<,>).MakeGenericType(parentType.GetGenericArguments());
             }
-            return typeof(StandaloneFeignClientProxyService<>).MakeGenericType(parentType.GetGenericArguments());
+            return typeof(StandaloneFeignClientHttpProxy<>).MakeGenericType(parentType.GetGenericArguments());
         }
     }
 }

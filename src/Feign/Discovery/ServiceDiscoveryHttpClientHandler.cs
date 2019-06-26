@@ -1,6 +1,7 @@
 ﻿using Feign.Cache;
 using Feign.Internal;
 using Feign.Logging;
+using Feign.Proxy;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Discovery
 {
-    public class ServiceDiscoveryHttpClientHandler : FeignHttpClientHandler
+    public class ServiceDiscoveryHttpClientHandler : FeignProxyHttpClientHandler
     {
 
         private IServiceResolve _serviceResolve;
@@ -21,7 +22,7 @@ namespace Feign.Discovery
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceDiscoveryHttpClientHandler"/> class.
         /// </summary>
-        public ServiceDiscoveryHttpClientHandler(IFeignClient feignClient, IServiceDiscovery serviceDiscovery, IGlobalFeignClientPipelineBuilder globalFeignClientPipeline, IServiceCacheProvider serviceCacheProvider, ILogger logger) : base(feignClient, globalFeignClientPipeline, logger)
+        public ServiceDiscoveryHttpClientHandler(FeignClientHttpProxy feignClient, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILogger logger) : base(feignClient, logger)
         {
             _serviceResolve = new RandomServiceResolve(logger);
             _serviceDiscovery = serviceDiscovery;

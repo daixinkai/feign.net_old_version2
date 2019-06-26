@@ -12,37 +12,37 @@ using FeignClientAuthorization = System.Tuple<string, string>;
 namespace Feign
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class FeignClientPipelineBuilderExtensions
+    public static class FeignClientPipelineExtensions
     {
         /// <summary>
         /// Gets the specified service Pipeline
         /// </summary>
-        /// <param name="globalFeignClientPipelineBuilder"></param>
+        /// <param name="globalFeignClientPipeline"></param>
         /// <param name="serviceId"></param>
         /// <returns></returns>
-        public static IServiceFeignClientPipelineBuilder Service(this IGlobalFeignClientPipelineBuilder globalFeignClientPipelineBuilder, string serviceId)
+        public static IServiceFeignClientPipeline Service(this IGlobalFeignClientPipeline globalFeignClientPipeline, string serviceId)
         {
             if (string.IsNullOrWhiteSpace(serviceId))
             {
                 throw new ArgumentException(nameof(serviceId));
             }
-            return globalFeignClientPipelineBuilder.GetOrAddServicePipeline(serviceId);
+            return globalFeignClientPipeline.GetOrAddServicePipeline(serviceId);
         }
 
 
         /// <summary>
         /// Gets the specified service Pipeline
         /// </summary>
-        /// <param name="globalFeignClientPipelineBuilder"></param>
+        /// <param name="globalFeignClientPipeline"></param>
         /// <param name="serviceId"></param>
         /// <returns></returns>
-        public static IServiceFeignClientPipelineBuilder Service<TService>(this IGlobalFeignClientPipelineBuilder globalFeignClientPipelineBuilder)
+        public static IServiceFeignClientPipeline Service<TService>(this IGlobalFeignClientPipeline globalFeignClientPipeline)
         {
-            return globalFeignClientPipelineBuilder.GetOrAddServicePipeline<TService>();
+            return globalFeignClientPipeline.GetOrAddServicePipeline<TService>();
         }
 
         #region Authorization
-        public static T Authorization<T>(this T feignClientPipeline, AuthenticationHeaderValue authenticationHeaderValue) where T : IFeignClientPipelineBuilder
+        public static T Authorization<T>(this T feignClientPipeline, AuthenticationHeaderValue authenticationHeaderValue) where T : IFeignClientPipeline
         {
             if (authenticationHeaderValue == null)
             {
@@ -57,7 +57,7 @@ namespace Feign
             };
             return feignClientPipeline;
         }
-        public static T Authorization<T>(this T feignClientPipeline, Func<IFeignClient, AuthenticationHeaderValue> authenticationHeaderValueAction) where T : IFeignClientPipelineBuilder
+        public static T Authorization<T>(this T feignClientPipeline, Func<IFeignClient, AuthenticationHeaderValue> authenticationHeaderValueAction) where T : IFeignClientPipeline
         {
             if (authenticationHeaderValueAction == null)
             {
@@ -73,7 +73,7 @@ namespace Feign
             };
             return feignClientPipeline;
         }
-        public static T Authorization<T>(this T feignClientPipeline, string scheme, string parameter) where T : IFeignClientPipelineBuilder
+        public static T Authorization<T>(this T feignClientPipeline, string scheme, string parameter) where T : IFeignClientPipeline
         {
             if (scheme == null)
             {
@@ -94,7 +94,7 @@ namespace Feign
         }
 
 #if NETSTANDARD
-        public static T Authorization<T>(this T feignClientPipeline, Func<IFeignClient, (string, string)> schemeAndParameterFactory) where T : IFeignClientPipelineBuilder
+        public static T Authorization<T>(this T feignClientPipeline, Func<IFeignClient, (string, string)> schemeAndParameterFactory) where T : IFeignClientPipeline
         {
             if (schemeAndParameterFactory == null)
             {

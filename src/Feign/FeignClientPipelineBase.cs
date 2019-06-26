@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Feign
 {
-    class FeignClientPipelineBuilderBase : IFeignClientPipelineBuilder
+    class FeignClientPipelineBase : IFeignClientPipeline
     {
         public virtual bool Enabled { get; set; } = true;
         public event EventHandler<BuildingRequestEventArgs> BuildingRequest;

@@ -91,21 +91,5 @@ namespace Feign
             return feignBuilder;
         }
 
-        //public static void AddMissingDefaultServices(this IFeignBuilder feignBuilder)
-        //{
-        //    if (!feignBuilder.IsRegister(typeof(IServiceCacheProvider)))
-        //    {
-        //        feignBuilder.AddServiceCacheProvider<DefaultServiceCacheProvider>();
-        //    }
-        //    if (!feignBuilder.IsRegister(typeof(IServiceDiscovery)))
-        //    {
-        //        feignBuilder.AddServiceDiscovery<DefaultServiceDiscovery>();
-        //    }
-        //    if (!feignBuilder.IsRegister(typeof(ILoggerFactory)))
-        //    {
-        //        feignBuilder.AddLoggerFactory<DefaultLoggerFactory>();
-        //    }
-        //}
-
     }
 }

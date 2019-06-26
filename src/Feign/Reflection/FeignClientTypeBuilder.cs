@@ -25,16 +25,16 @@ namespace Feign.Reflection
             _guid = Guid.NewGuid().ToString("N").ToUpper();
             _suffix = "_Proxy_" + _guid;
             _dynamicAssembly = dynamicAssembly;
-            _methodBuilder = new FeignClientProxyServiceEmitMethodBuilder();
-            _fallbackMethodBuilder = new FallbackFeignClientProxyServiceEmitMethodBuilder(_dynamicAssembly);
+            _methodBuilder = new FeignClientHttpProxyEmitMethodBuilder();
+            _fallbackMethodBuilder = new FallbackFeignClientHttpProxyEmitMethodBuilder(_dynamicAssembly);
         }
 
         string _guid;
         string _suffix;
 
-        FeignClientProxyServiceEmitMethodBuilder _methodBuilder;
+        FeignClientHttpProxyEmitMethodBuilder _methodBuilder;
 
-        FallbackFeignClientProxyServiceEmitMethodBuilder _fallbackMethodBuilder;
+        FallbackFeignClientHttpProxyEmitMethodBuilder _fallbackMethodBuilder;
 
         DynamicAssembly _dynamicAssembly;
 
@@ -53,19 +53,19 @@ namespace Feign.Reflection
             if (feignClientAttribute.Fallback != null)
             {
                 methodBuilder = _fallbackMethodBuilder;
-                parentType = typeof(FallbackFeignClientProxyService<,>);
+                parentType = typeof(FallbackFeignClientHttpProxy<,>);
                 parentType = parentType.MakeGenericType(interfaceType, feignClientAttribute.Fallback);
             }
             else if (feignClientAttribute.FallbackFactory != null)
             {
                 methodBuilder = _fallbackMethodBuilder;
-                parentType = typeof(FallbackFactoryFeignClientProxyService<,>);
+                parentType = typeof(FallbackFactoryFeignClientHttpProxy<,>);
                 parentType = parentType.MakeGenericType(interfaceType, feignClientAttribute.FallbackFactory);
             }
             else
             {
                 methodBuilder = _methodBuilder;
-                parentType = typeof(FeignClientProxyService<>);
+                parentType = typeof(FeignClientHttpProxy<>);
                 parentType = parentType.MakeGenericType(interfaceType);
             }
             parentType = GetParentType(parentType);

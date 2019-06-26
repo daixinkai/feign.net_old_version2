@@ -17,13 +17,17 @@ namespace Feign
             Converters.AddConverter(new ObjectStringConverter());
             MediaTypeFormatters = new MediaTypeFormatterCollection();
             MediaTypeFormatters.AddFormatter(new JsonMediaTypeFormatter());
-            FeignClientPipeline = new GlobalFeignClientPipelineBuilder();
+            MediaTypeFormatters.AddFormatter(new FormUrlEncodedMediaTypeFormatter());
+            MediaTypeFormatters.AddFormatter(new MultipartFormDataMediaTypeFormatter());
+            MediaTypeFormatters.AddFormatter(new XmlMediaTypeFormatter());
+            MediaTypeFormatters.AddFormatter(new XmlMediaTypeFormatter() { MediaType = "text/xml" });
+            FeignClientPipeline = new GlobalFeignClientPipeline();
             Lifetime = FeignClientLifetime.Transient;
         }
         public IList<Assembly> Assemblies { get; }
         public ConverterCollection Converters { get; }
         public MediaTypeFormatterCollection MediaTypeFormatters { get; }
-        public IGlobalFeignClientPipelineBuilder FeignClientPipeline { get; }
+        public IGlobalFeignClientPipeline FeignClientPipeline { get; }
         public FeignClientLifetime Lifetime { get; set; }
 
     }
