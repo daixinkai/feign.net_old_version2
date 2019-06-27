@@ -17,7 +17,7 @@ namespace Feign.Internal
 
         public static LocalBuilder DefineEmitMethodInfo(ILGenerator iLGenerator, MethodInfo method)
         {
-            LocalBuilder methodLocalBuilder = iLGenerator.DeclareLocal(typeof(MethodBase));
+            LocalBuilder methodLocalBuilder = iLGenerator.DeclareLocal(typeof(MethodInfo));
             iLGenerator.Emit(OpCodes.Ldtoken, method);
             iLGenerator.Emit(OpCodes.Call, GetMethodFromHandleMethodInfo);
             iLGenerator.Emit(OpCodes.Castclass, typeof(MethodInfo));

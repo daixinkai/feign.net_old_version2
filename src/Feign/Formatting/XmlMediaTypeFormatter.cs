@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -17,7 +18,7 @@ namespace Feign.Formatting
         }
         public string MediaType { get; set; }
 
-        public HttpContent GetHttpContent(object content)
+        public HttpContent GetHttpContent(object content, MediaTypeHeaderValue contentType)
         {
             if (content == null)
             {

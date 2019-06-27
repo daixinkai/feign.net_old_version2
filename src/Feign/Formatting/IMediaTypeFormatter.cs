@@ -12,7 +12,7 @@ namespace Feign.Formatting
     public interface IMediaTypeFormatter
     {
         string MediaType { get; }
-        HttpContent GetHttpContent(object content);
+        HttpContent GetHttpContent(object content, MediaTypeHeaderValue contentType);
         TResult GetResult<TResult>(byte[] buffer, Encoding encoding);
     }
 }

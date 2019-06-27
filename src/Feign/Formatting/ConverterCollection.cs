@@ -65,5 +65,43 @@ namespace Feign.Formatting
             return converter;
         }
 
+        internal TResult ConvertValue<TResult>(object value, bool useDefault)
+        {
+            if (value == null)
+            {
+                return default(TResult);
+            }
+            var converter = FindConverter(value.GetType(), typeof(TResult));
+            if (converter == null)
+            {
+                if (!useDefault)
+                {
+                    return default(TResult);
+                }
+                return FindConverter<object, TResult>().Convert(value);
+            }
+            //TODO : optimize
+            object convertValue = converter.GetType().GetMethod("Convert").Invoke(converter, new[] { value });
+            if (convertValue == null)
+            {
+                return default(TResult);
+            }
+            return (TResult)convertValue;
+        }
+
+        internal TResult ConvertValue<TSource, TResult>(TSource value, bool useDefault)
+        {
+            var converter = FindConverter<TSource, TResult>();
+            if (converter == null)
+            {
+                if (!useDefault)
+                {
+                    return default(TResult);
+                }
+                return FindConverter<object, TResult>().Convert(value);
+            }
+            return converter.Convert(value);
+        }
+
     }
 }

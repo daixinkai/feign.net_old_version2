@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using Autofac;
 using Castle.Windsor;
 using Feign.Cache;
@@ -71,9 +76,71 @@ namespace Feign.Tests.NET45
                 options.FeignClientPipeline.ReceivingQueryResult();
             });
             ITestService testService = FeignClients.Get<ITestService>();
+
             Assert.IsNotNull(testService);
             var result = testService.GetQueryResultValue("", null);
         }
 
+
+        [TestMethod]
+        public void TestCustomOrderBy()
+        {
+            List<QueryResult> queryResults = new List<QueryResult>();
+
+            queryResults.Add(new QueryResult()
+            {
+                StatusCode = System.Net.HttpStatusCode.Accepted
+            });
+            queryResults.Add(new QueryResult()
+            {
+                StatusCode = System.Net.HttpStatusCode.Ambiguous
+            });
+            queryResults.Add(new QueryResult()
+            {
+                StatusCode = System.Net.HttpStatusCode.BadGateway
+            });
+
+            queryResults.Add(new QueryResult()
+            {
+                StatusCode = System.Net.HttpStatusCode.BadRequest
+            });
+            queryResults.Add(new QueryResult()
+            {
+                StatusCode = System.Net.HttpStatusCode.Conflict
+            });
+            queryResults.Add(new QueryResult()
+            {
+                StatusCode = System.Net.HttpStatusCode.Continue
+            });
+            var query = queryResults.AsQueryable();
+
+            var rr = query.OrderBy(s => s.StatusCode).OrderBy("StatusCode", true, true).ToList();
+
+        }
+
     }
+
+
+    public static class TestExtensions
+    {
+        public static IOrderedQueryable<TEntity> OrderBy<TEntity>(this IOrderedQueryable<TEntity> source, string orderByProperty, bool desc, bool then)
+        {
+            var command = (then ? "Then" : "Order") + (desc ? "ByDescending" : "By");
+
+            var entityType = typeof(TEntity);
+            var entityParameter = Expression.Parameter(entityType, "x");
+
+            var property = entityType.GetProperty(orderByProperty);
+
+            var propertyAccess = Expression.MakeMemberAccess(entityParameter, property);
+            var orderByExpression = Expression.Lambda(propertyAccess, entityParameter);
+
+            var resultExpression =
+                Expression.Call(typeof(Queryable), command, new Type[] { entityType, property.PropertyType }, source.Expression, Expression.Quote(orderByExpression));
+
+            return (IOrderedQueryable<TEntity>)source.Provider.CreateQuery<TEntity>(resultExpression);
+        }
+    }
+
+
 }

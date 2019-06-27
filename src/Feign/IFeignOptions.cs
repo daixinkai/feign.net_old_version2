@@ -14,6 +14,7 @@ namespace Feign
         ConverterCollection Converters { get; }
         MediaTypeFormatterCollection MediaTypeFormatters { get; }
         IGlobalFeignClientPipeline FeignClientPipeline { get; }
-        FeignClientLifetime Lifetime { get; }
+        FeignClientLifetime Lifetime { get; set; }
+        bool IncludeMethodMetadata { get; set; }
     }
 }

@@ -19,25 +19,25 @@ namespace Feign
             MappingUri = mappingUri;
             Uri = uri;
             HttpMethod = httpMethod;
-            ContentType = contentType;
             Content = content;
             Method = method;
-            if (string.IsNullOrWhiteSpace(ContentType))
+            if (string.IsNullOrWhiteSpace(contentType))
             {
-                ContentType = "application/json; charset=utf-8";
+                contentType = "application/json; charset=utf-8";
             }
             MediaTypeHeaderValue mediaTypeHeaderValue;
-            if (!MediaTypeHeaderValue.TryParse(ContentType, out mediaTypeHeaderValue))
+            if (!MediaTypeHeaderValue.TryParse(contentType, out mediaTypeHeaderValue))
             {
                 throw new ArgumentException("ContentType error");
             }
             MediaType = mediaTypeHeaderValue.MediaType;
+            ContentType = mediaTypeHeaderValue;
         }
         public string BaseUrl { get; }
         public string MappingUri { get; }
         public string Uri { get; }
         public string HttpMethod { get; }
-        public string ContentType { get; }
+        public MediaTypeHeaderValue ContentType { get; }
         public string MediaType { get; }
         public object Content { get; }
         public MethodInfo Method { get; }
@@ -46,7 +46,7 @@ namespace Feign
             if (Content != null)
             {
                 IMediaTypeFormatter mediaTypeFormatter = mediaTypeFormatters.FindFormatter(MediaType);
-                return mediaTypeFormatter?.GetHttpContent(Content);
+                return mediaTypeFormatter?.GetHttpContent(Content, ContentType);
             }
             return null;
         }

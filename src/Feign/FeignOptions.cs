@@ -29,6 +29,7 @@ namespace Feign
         public MediaTypeFormatterCollection MediaTypeFormatters { get; }
         public IGlobalFeignClientPipeline FeignClientPipeline { get; }
         public FeignClientLifetime Lifetime { get; set; }
+        public bool IncludeMethodMetadata { get; set; }
 
     }
 }

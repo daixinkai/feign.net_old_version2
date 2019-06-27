@@ -10,10 +10,16 @@ namespace Feign.Tests
     {
         public CustomFeignClientAttribute(string name) : base(name)
         {
-            //_url = "http://10.1.5.90:8802/";
+            MethodInfo method = null;
+            if (Flag)
+            {
+                method = (MethodInfo)MethodBase.GetCurrentMethod();
+            }
         }
 
         string _url;
+
+        bool Flag { get; }
 
         public override string Url { get => _url; set => _url = value; }
 

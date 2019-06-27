@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace Feign.Formatting
         }
         public string MediaType { get; }
 
-        public HttpContent GetHttpContent(object content)
+        public HttpContent GetHttpContent(object content, MediaTypeHeaderValue contentType)
         {
             throw new NotImplementedException();
             //if (content == null)

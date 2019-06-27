@@ -18,7 +18,7 @@ namespace Feign.Internal
 
         public static string ReplacePathVariable<T>(ConverterCollection converters, string uri, string name, T value)
         {
-            return ReplacePathVariable(uri, name, ConvertValue<T, string>(converters, value, true));
+            return ReplacePathVariable(uri, name, converters.ConvertValue<T, string>(value, true));
         }
         #endregion
 
@@ -76,18 +76,18 @@ namespace Feign.Internal
                             {
                                 continue;
                             }
-                            uri = ReplaceRequestParam(uri, property.Name, ConvertValue<string>(converters, item, true));
+                            uri = ReplaceRequestParam(uri, property.Name, converters.ConvertValue<string>(item, true));
                         }
                         continue;
                     }
-                    uri = ReplaceRequestParam(uri, property.Name, ConvertValue<string>(converters, propertyValue, true));
+                    uri = ReplaceRequestParam(uri, property.Name, converters.ConvertValue<string>(propertyValue, true));
                 }
 
                 return uri;
 
             }
 
-            return ReplaceRequestParam(uri, name, ConvertValue<T, string>(converters, value, true));
+            return ReplaceRequestParam(uri, name, converters.ConvertValue<T, string>(value, true));
         }
 
         #endregion
@@ -130,49 +130,11 @@ namespace Feign.Internal
             }
             else
             {
-                return ReplaceRequestQuery(uri, name, ConvertValue<T, string>(converters, value, true));
+                return ReplaceRequestQuery(uri, name, converters.ConvertValue<T, string>(value, true));
             }
         }
         #endregion
 
-
-        public static TResult ConvertValue<TResult>(ConverterCollection converters, object value, bool useDefault)
-        {
-            if (value == null)
-            {
-                return default(TResult);
-            }
-            var converter = converters.FindConverter(value.GetType(), typeof(TResult));
-            if (converter == null)
-            {
-                if (!useDefault)
-                {
-                    return default(TResult);
-                }
-                return converters.FindConverter<object, TResult>().Convert(value);
-            }
-            //TODO : optimize
-            object convertValue = converter.GetType().GetMethod("Convert").Invoke(converter, new[] { value });
-            if (convertValue == null)
-            {
-                return default(TResult);
-            }
-            return (TResult)convertValue;
-        }
-
-        public static TResult ConvertValue<TSource, TResult>(ConverterCollection converters, TSource value, bool useDefault)
-        {
-            var converter = converters.FindConverter<TSource, TResult>();
-            if (converter == null)
-            {
-                if (!useDefault)
-                {
-                    return default(TResult);
-                }
-                return converters.FindConverter<object, TResult>().Convert(value);
-            }
-            return converter.Convert(value);
-        }
 
     }
 }

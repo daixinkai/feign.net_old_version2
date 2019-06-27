@@ -203,7 +203,28 @@ namespace Feign.Reflection
                 iLGenerator.Emit(OpCodes.Ldnull);
             }
             //method
-            LocalBuilder methodInfoLocalBuilder = ReflectionHelper.DefineEmitMethodInfo(iLGenerator, methodInfo);
+            // method=null
+            LocalBuilder methodInfoLocalBuilder = iLGenerator.DeclareLocal(typeof(MethodInfo));
+            iLGenerator.Emit(OpCodes.Ldnull);
+            iLGenerator.Emit(OpCodes.Stloc, methodInfoLocalBuilder);
+            Label newFeingClientRequestLabel = iLGenerator.DefineLabel();
+
+            #region if (base.FeignOptions.IncludeMethodMetadata) set the call method
+
+            PropertyInfo feignOptionsProperty = typeBuilder.BaseType.GetProperty("FeignOptions", BindingFlags.Instance | BindingFlags.NonPublic);
+            PropertyInfo includeMethodMetadataProperty = feignOptionsProperty.PropertyType.GetProperty("IncludeMethodMetadata");
+            iLGenerator.Emit(OpCodes.Ldarg_0);
+            iLGenerator.Emit(OpCodes.Call, feignOptionsProperty.GetMethod);
+            iLGenerator.Emit(OpCodes.Call, includeMethodMetadataProperty.GetMethod);
+            iLGenerator.Emit(OpCodes.Ldc_I4, 1);
+            iLGenerator.Emit(OpCodes.Ceq);
+            iLGenerator.Emit(OpCodes.Brfalse_S, newFeingClientRequestLabel);
+            ReflectionHelper.EmitMethodInfo(iLGenerator, methodInfo);
+            iLGenerator.Emit(OpCodes.Stloc, methodInfoLocalBuilder);
+
+            #endregion
+
+            iLGenerator.MarkLabel(newFeingClientRequestLabel);
             iLGenerator.Emit(OpCodes.Ldloc, methodInfoLocalBuilder);
             iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientRequest).GetConstructors()[0]);
             iLGenerator.Emit(OpCodes.Stloc, localBuilder);

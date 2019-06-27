@@ -124,5 +124,10 @@ namespace Feign.Tests
         {
 
         }
+
+        public Task UploadFile()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

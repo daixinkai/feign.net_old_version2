@@ -85,6 +85,8 @@ namespace Feign.Proxy
 
         IFeignOptions _feignOptions;
 
+        protected IFeignOptions FeignOptions => _feignOptions;
+
         protected HttpClient HttpClient { get; }
 
 

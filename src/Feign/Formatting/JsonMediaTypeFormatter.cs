@@ -18,7 +18,7 @@ namespace Feign.Formatting
         }
         public string MediaType { get; }
 
-        public HttpContent GetHttpContent(object content)
+        public HttpContent GetHttpContent(object content, MediaTypeHeaderValue contentType)
         {
             if (content == null)
             {

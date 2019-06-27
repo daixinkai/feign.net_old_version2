@@ -21,6 +21,9 @@ namespace Feign.Tests
         [RequestMapping("/{id}/asdasdsad", Method = "POST")]
         Task PostValueAsync();
 
+        [RequestMapping("/{id}/asdasdsad", Method = "POST", ContentType = "multipart/form-data")]
+        Task UploadFile();
+
         [RequestMapping("/{id}", Method = "GET")]
         Task<QueryResult<JObject>> GetQueryResultValueAsync([PathVariable("id")]string id, [RequestQuery] TestServiceParam param);
 
