@@ -16,21 +16,6 @@ namespace Feign.Formatting
         }
         public string MediaType { get; }
 
-        public HttpContent GetHttpContent(object content, MediaTypeHeaderValue contentType)
-        {
-            throw new NotImplementedException();
-            //if (content == null)
-            //{
-            //    return null;
-            //}
-            //IEnumerable<KeyValuePair<string, string>> nameValueCollection = null;
-            //if (typeof(IDictionary<,>).IsAssignableFrom(content.GetType()))
-            //{
-
-            //}
-            //return new FormUrlEncodedContent(nameValueCollection);
-        }
-
         public TResult GetResult<TResult>(byte[] buffer, Encoding encoding)
         {
             throw new NotSupportedException();

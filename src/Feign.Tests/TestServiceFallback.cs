@@ -129,5 +129,15 @@ namespace Feign.Tests
         {
             throw new NotImplementedException();
         }
+
+        public Task PostValueFormAsync([PathVariable] int id, [RequestParam] string test, [RequestForm] TestServiceParam param)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task PostValueForm2Async([PathVariable] int id, [RequestParam] string test, [RequestForm] TestServiceParam param1, [RequestForm] TestServiceParam param2)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

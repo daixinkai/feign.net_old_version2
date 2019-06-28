@@ -69,7 +69,7 @@ namespace Feign.Tests.NET45
 
         [TestMethod]
         public void TestMethod_Standalone()
-        {
+        {            
             FeignClients.AddFeignClients(options =>
             {
                 options.Assemblies.Add(typeof(ITestService).Assembly);

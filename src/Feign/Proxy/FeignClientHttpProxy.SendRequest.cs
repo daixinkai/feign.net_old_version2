@@ -241,7 +241,7 @@ namespace Feign.Proxy
             // if support content
             if (httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put)
             {
-                HttpContent httpContent = request.GetHttpContent(_feignOptions.MediaTypeFormatters);
+                HttpContent httpContent = request.GetHttpContent();
                 if (httpContent != null)
                 {
                     httpRequestMessage.Content = httpContent;

@@ -45,6 +45,12 @@ namespace Feign.Tests
         [RequestMapping("/{id}", Method = "POST")]
         Task PostValueAsync([PathVariable]int id, [RequestParam] string test, [RequestBody] TestServiceParam param);
 
+        [RequestMapping("/{id}", Method = "POST")]
+        Task PostValueFormAsync([PathVariable]int id, [RequestParam] string test, [RequestForm] TestServiceParam param);
+
+        [RequestMapping("/{id}", Method = "POST")]
+        Task PostValueForm2Async([PathVariable]int id, [RequestParam] string test, [RequestForm] TestServiceParam param1, [RequestForm] TestServiceParam param2);
+
         [RequestMapping("/{id}")]
         void GetValueVoid([PathVariable]int id, [RequestParam] TestServiceParam queryParam, [RequestQuery] TestServiceParam param);
 

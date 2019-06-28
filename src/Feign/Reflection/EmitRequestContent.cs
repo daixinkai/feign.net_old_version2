@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Feign.Internal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,10 +12,14 @@ namespace Feign.Reflection
     {
         public EmitRequestContent()
         {
-            RequestContentIndex = -1;
+            ParameterIndex = -1;
         }
-        public RequestParameterBaseAttribute RequestContent { get; set; }
-        public ParameterInfo Content { get; set; }
-        public int RequestContentIndex { get; set; }
+
+        public string MediaType { get; set; }
+        public ParameterInfo Parameter { get; set; }
+        public int ParameterIndex { get; set; }
+
+        public bool SupportMultipart { get; set; }
+
     }
 }

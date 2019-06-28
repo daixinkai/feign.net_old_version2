@@ -18,15 +18,6 @@ namespace Feign.Formatting
         }
         public string MediaType { get; }
 
-        public HttpContent GetHttpContent(object content, MediaTypeHeaderValue contentType)
-        {
-            if (content == null)
-            {
-                return null;
-            }
-            return new ObjectStringContent(content);
-        }
-
         public TResult GetResult<TResult>(byte[] buffer, Encoding encoding)
         {
             string json = (encoding ?? Encoding.Default).GetString(buffer);

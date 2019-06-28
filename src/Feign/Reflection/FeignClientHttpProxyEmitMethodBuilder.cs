@@ -40,8 +40,8 @@ namespace Feign.Reflection
             LocalBuilder local_OldValue = iLGenerator.DeclareLocal(typeof(string)); // temp
             iLGenerator.Emit(OpCodes.Ldstr, uri);
             iLGenerator.Emit(OpCodes.Stloc, local_Uri);
-            EmitRequestContent emitRequestContent = EmitParameter(iLGenerator, method, local_Uri, local_OldValue);
-            EmitCallMethod(typeBuilder, methodBuilder, iLGenerator, serviceType, method, requestMapping, local_Uri, emitRequestContent);
+            List<EmitRequestContent> emitRequestContents = EmitParameter(iLGenerator, method, local_Uri, local_OldValue);
+            EmitCallMethod(typeBuilder, methodBuilder, iLGenerator, serviceType, method, requestMapping, local_Uri, emitRequestContents);
         }
 
         protected MethodInfo GetInvokeMethod(MethodInfo method, RequestMappingBaseAttribute requestMapping)
@@ -141,21 +141,21 @@ namespace Feign.Reflection
             return methodBuilder;
         }
 
-        protected virtual void EmitCallMethod(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type serviceType, MethodInfo method, RequestMappingBaseAttribute requestMapping, LocalBuilder uri, EmitRequestContent emitRequestContent)
+        protected virtual void EmitCallMethod(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type serviceType, MethodInfo method, RequestMappingBaseAttribute requestMapping, LocalBuilder uri, List<EmitRequestContent> emitRequestContents)
         {
             var invokeMethod = GetInvokeMethod(method, requestMapping);
-            if (emitRequestContent.RequestContent != null && !SupportRequestContent(invokeMethod, requestMapping))
+            if (emitRequestContents != null && emitRequestContents.Count > 0 && !SupportRequestContent(invokeMethod, requestMapping))
             {
                 throw new NotSupportedException("不支持RequestBody或者RequestForm");
             }
-            LocalBuilder feignClientRequest = DefineFeignClientRequest(typeBuilder, serviceType, iLGenerator, uri, requestMapping, emitRequestContent, method);
+            LocalBuilder feignClientRequest = DefineFeignClientRequest(typeBuilder, serviceType, iLGenerator, uri, requestMapping, emitRequestContents, method);
             iLGenerator.Emit(OpCodes.Ldarg_0);  //this
             iLGenerator.Emit(OpCodes.Ldloc, feignClientRequest);
             iLGenerator.Emit(OpCodes.Call, invokeMethod);
             iLGenerator.Emit(OpCodes.Ret);
         }
 
-        protected LocalBuilder DefineFeignClientRequest(TypeBuilder typeBuilder, Type serviceType, ILGenerator iLGenerator, LocalBuilder uri, RequestMappingBaseAttribute requestMapping, EmitRequestContent emitRequestContent, MethodInfo methodInfo)
+        protected LocalBuilder DefineFeignClientRequest(TypeBuilder typeBuilder, Type serviceType, ILGenerator iLGenerator, LocalBuilder uri, RequestMappingBaseAttribute requestMapping, List<EmitRequestContent> emitRequestContents, MethodInfo methodInfo)
         {
             LocalBuilder localBuilder = iLGenerator.DeclareLocal(typeof(FeignClientRequest));
             // baseUrl
@@ -189,13 +189,51 @@ namespace Feign.Reflection
                 iLGenerator.Emit(OpCodes.Ldstr, contentType);
             }
 
-            //content
-            if (emitRequestContent.Content != null)
+            //requestContent
+            if (emitRequestContents != null && emitRequestContents.Count > 0)
             {
-                iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.RequestContentIndex);
-                if (emitRequestContent.Content.ParameterType.IsValueType)
+                if (emitRequestContents.Count == 1)
                 {
-                    iLGenerator.Emit(OpCodes.Box, emitRequestContent.Content.ParameterType);
+                    ConstructorInfo constructorInfo;
+                    switch (emitRequestContents[0].MediaType)
+                    {
+                        case "application/json":
+                            constructorInfo = typeof(FeignClientJsonRequestContent).GetConstructors()[0];
+                            break;
+                        case "application/x-www-form-urlencoded":
+                            constructorInfo = typeof(FeignClientFormRequestContent).GetConstructors()[0];
+                            break;
+                        default:
+                            throw new NotSupportedException("不支持的content type");
+                    }
+                    iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContents[0].ParameterIndex);
+                    if (emitRequestContents[0].Parameter.ParameterType.IsValueType)
+                    {
+                        iLGenerator.Emit(OpCodes.Box, emitRequestContents[0].Parameter.ParameterType);
+                    }
+                    iLGenerator.Emit(OpCodes.Newobj, constructorInfo);
+                }
+                else if (emitRequestContents.Any(s => !s.SupportMultipart))
+                {
+                    throw new NotSupportedException("最多只支持一个RequestContent");
+                }
+                else
+                {
+                    LocalBuilder requestContent = iLGenerator.DeclareLocal(typeof(FeignClientMultipartFormRequestContent));
+                    MethodInfo methodAddContent = typeof(FeignClientMultipartFormRequestContent).GetMethod("AddContent");
+                    iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientMultipartFormRequestContent).GetConstructors()[0]);
+                    iLGenerator.Emit(OpCodes.Stloc, requestContent);
+                    for (int i = 0; i < emitRequestContents.Count; i++)
+                    {
+                        iLGenerator.Emit(OpCodes.Ldloc, requestContent);
+                        iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContents[i].ParameterIndex);
+                        if (emitRequestContents[0].Parameter.ParameterType.IsValueType)
+                        {
+                            iLGenerator.Emit(OpCodes.Box, emitRequestContents[i].Parameter.ParameterType);
+                        }
+                        iLGenerator.Emit(OpCodes.Call, methodAddContent);
+                    }
+                    iLGenerator.Emit(OpCodes.Ldloc, requestContent);
                 }
             }
             else
@@ -238,32 +276,32 @@ namespace Feign.Reflection
             iLGenerator.Emit(OpCodes.Callvirt, propertyInfo.GetMethod);
         }
 
-        protected EmitRequestContent EmitParameter(ILGenerator iLGenerator, MethodInfo method, LocalBuilder uri, LocalBuilder value)
+        protected List<EmitRequestContent> EmitParameter(ILGenerator iLGenerator, MethodInfo method, LocalBuilder uri, LocalBuilder value)
         {
-            EmitRequestContent emitRequestContent = new EmitRequestContent();
             int index = 1;
+            List<EmitRequestContent> emitRequestContents = new List<EmitRequestContent>();
             foreach (var parameterInfo in method.GetParameters())
             {
                 if (parameterInfo.IsDefined(typeof(RequestBodyAttribute)))
                 {
-                    if (emitRequestContent.RequestContent != null)
+                    emitRequestContents.Add(new EmitRequestContent
                     {
-                        throw new ArgumentException("最多只能有一个RequestBody或者RequestForm", parameterInfo.Name);
-                    }
-                    emitRequestContent.Content = parameterInfo;
-                    emitRequestContent.RequestContent = parameterInfo.GetCustomAttribute<RequestBodyAttribute>();
-                    emitRequestContent.RequestContentIndex = index;
+                        MediaType = "application/json",
+                        Parameter = parameterInfo,
+                        SupportMultipart = false,
+                        ParameterIndex = index
+                    });
                     continue;
                 }
                 if (parameterInfo.IsDefined(typeof(RequestFormAttribute)))
                 {
-                    if (emitRequestContent.RequestContent != null)
+                    emitRequestContents.Add(new EmitRequestContent
                     {
-                        throw new ArgumentException("最多只能有一个RequestBody或者RequestForm", parameterInfo.Name);
-                    }
-                    emitRequestContent.Content = parameterInfo;
-                    emitRequestContent.RequestContent = parameterInfo.GetCustomAttribute<RequestFormAttribute>();
-                    emitRequestContent.RequestContentIndex = index;
+                        MediaType = "application/x-www-form-urlencoded",
+                        Parameter = parameterInfo,
+                        SupportMultipart = true,
+                        ParameterIndex = index
+                    });
                     continue;
                 }
                 MethodInfo replaceValueMethod;
@@ -300,7 +338,7 @@ namespace Feign.Reflection
                 iLGenerator.Emit(OpCodes.Stloc, uri);
                 index++;
             }
-            return emitRequestContent;
+            return emitRequestContents;
         }
 
     }

@@ -13,13 +13,13 @@ namespace Feign
 {
     public class FeignClientRequest
     {
-        public FeignClientRequest(string baseUrl, string mappingUri, string uri, string httpMethod, string contentType, object content, MethodInfo method)
+        public FeignClientRequest(string baseUrl, string mappingUri, string uri, string httpMethod, string contentType, FeignClientRequestContent requestContent, MethodInfo method)
         {
             BaseUrl = baseUrl;
             MappingUri = mappingUri;
             Uri = uri;
             HttpMethod = httpMethod;
-            Content = content;
+            RequestContent = requestContent;
             Method = method;
             if (string.IsNullOrWhiteSpace(contentType))
             {
@@ -39,16 +39,11 @@ namespace Feign
         public string HttpMethod { get; }
         public MediaTypeHeaderValue ContentType { get; }
         public string MediaType { get; }
-        public object Content { get; }
+        public FeignClientRequestContent RequestContent { get; }
         public MethodInfo Method { get; }
-        public HttpContent GetHttpContent(MediaTypeFormatterCollection mediaTypeFormatters)
+        public HttpContent GetHttpContent()
         {
-            if (Content != null)
-            {
-                IMediaTypeFormatter mediaTypeFormatter = mediaTypeFormatters.FindFormatter(MediaType);
-                return mediaTypeFormatter?.GetHttpContent(Content, ContentType);
-            }
-            return null;
+            return RequestContent?.GetHttpContent(ContentType);
         }
 
     }

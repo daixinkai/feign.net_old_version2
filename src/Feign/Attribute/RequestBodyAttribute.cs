@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Feign.Internal;
+using System;
 using System.Collections.Generic;
 using System.Text;
 

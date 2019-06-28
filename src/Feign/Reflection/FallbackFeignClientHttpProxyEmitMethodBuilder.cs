@@ -40,14 +40,14 @@ namespace Feign.Reflection
             return httpClientMethod;
         }
 
-        protected override void EmitCallMethod(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type serviceType, MethodInfo method, RequestMappingBaseAttribute requestMapping, LocalBuilder uri, EmitRequestContent emitRequestContent)
+        protected override void EmitCallMethod(TypeBuilder typeBuilder, MethodBuilder methodBuilder, ILGenerator iLGenerator, Type serviceType, MethodInfo method, RequestMappingBaseAttribute requestMapping, LocalBuilder uri, List<EmitRequestContent> emitRequestContents)
         {
             var invokeMethod = GetInvokeMethod(method, requestMapping);
-            if (emitRequestContent.RequestContent != null && !SupportRequestContent(invokeMethod, requestMapping))
+            if (emitRequestContents != null && emitRequestContents.Count > 0 && !SupportRequestContent(invokeMethod, requestMapping))
             {
                 throw new NotSupportedException("不支持RequestBody或者RequestForm");
             }
-            LocalBuilder feignClientRequest = DefineFeignClientRequest(typeBuilder, serviceType, iLGenerator, uri, requestMapping, emitRequestContent, method);
+            LocalBuilder feignClientRequest = DefineFeignClientRequest(typeBuilder, serviceType, iLGenerator, uri, requestMapping, emitRequestContents, method);
             // fallback
             LocalBuilder fallbackDelegate = DefineFallbackDelegate(typeBuilder, methodBuilder, iLGenerator, serviceType, method);
             iLGenerator.Emit(OpCodes.Ldarg_0);  //this
