@@ -13,12 +13,14 @@ namespace Feign.Standalone
         {
             ServiceType = serviceType;
             ImplementationInstance = instance;
+            Lifetime = FeignClientLifetime.Singleton;
         }
 
         public ServiceDescriptor(Type serviceType, Type implementationType, FeignClientLifetime lifetime)
         {
             ServiceType = serviceType;
             ImplementationType = implementationType;
+            Lifetime = lifetime;
         }
 
 
@@ -44,7 +46,8 @@ namespace Feign.Standalone
                         Singletons.SetInstance(ServiceType, value);
                     }
                     return value;
-                //case FeignClientLifetime.Scoped:
+                case FeignClientLifetime.Scoped:
+                    throw new NotSupportedException();
                 case FeignClientLifetime.Transient:
                     return GetNewService(ImplementationType);
                 default:

@@ -161,7 +161,7 @@ namespace Feign.Proxy
                  responseMessage.RequestMessage as FeignHttpRequestMessage,
                  new HttpRequestException($"Content type '{responseMessage.Content.Headers.ContentType.ToString()}' not supported"));
             }
-            return mediaTypeFormatter.GetResult<TResult>(responseMessage.Content.ReadAsByteArrayAsync().GetResult(), GetEncoding(responseMessage.Content.Headers.ContentType));
+            return mediaTypeFormatter.GetResult<TResult>(responseMessage.Content.ReadAsByteArrayAsync().GetResult(), FeignClientUtils.GetEncoding(responseMessage.Content.Headers.ContentType));
         }
 
         private async Task<TResult> GetResultAsync<TResult>(FeignClientRequest request, HttpResponseMessage responseMessage)
@@ -201,38 +201,10 @@ namespace Feign.Proxy
                      responseMessage.RequestMessage as FeignHttpRequestMessage,
                      new HttpRequestException($"Content type '{responseMessage.Content.Headers.ContentType.ToString()}' not supported"));
             }
-            return mediaTypeFormatter.GetResult<TResult>(await responseMessage.Content.ReadAsByteArrayAsync(), GetEncoding(responseMessage.Content.Headers.ContentType));
+            return mediaTypeFormatter.GetResult<TResult>(await responseMessage.Content.ReadAsByteArrayAsync(), FeignClientUtils.GetEncoding(responseMessage.Content.Headers.ContentType));
         }
 
-        private Encoding GetEncoding(System.Net.Http.Headers.MediaTypeHeaderValue mediaTypeHeaderValue)
-        {
-            string charset = mediaTypeHeaderValue?.CharSet;
 
-            // If we do have encoding information in the 'Content-Type' header, use that information to convert
-            // the content to a string.
-            if (charset != null)
-            {
-                try
-                {
-                    // Remove at most a single set of quotes.
-                    if (charset.Length > 2 &&
-                        charset[0] == '\"' &&
-                        charset[charset.Length - 1] == '\"')
-                    {
-                        return Encoding.GetEncoding(charset.Substring(1, charset.Length - 2));
-                    }
-                    else
-                    {
-                        return Encoding.GetEncoding(charset);
-                    }
-                }
-                catch (ArgumentException e)
-                {
-                    throw new InvalidOperationException("The character set provided in ContentType is invalid. Cannot read content as string using an invalid character set.", e);
-                }
-            }
-            return null;
-        }
 
         private Task<HttpResponseMessage> SendAsyncInternal(FeignClientRequest request)
         {

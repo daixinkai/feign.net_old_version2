@@ -57,16 +57,16 @@ namespace Feign
                 {
                     continue;
                 }
-                feignBuilder.AddService(serviceType, proxyType, lifetime);
-                // add fallback
                 FeignClientAttribute feignClientAttribute = serviceType.GetCustomAttribute<FeignClientAttribute>();
+                feignBuilder.AddService(serviceType, proxyType, feignClientAttribute.Lifetime ?? lifetime);
+                // add fallback
                 if (feignClientAttribute.Fallback != null)
                 {
-                    feignBuilder.AddService(feignClientAttribute.Fallback, lifetime);
+                    feignBuilder.AddService(feignClientAttribute.Fallback, feignClientAttribute.Lifetime ?? lifetime);
                 }
                 if (feignClientAttribute.FallbackFactory != null)
                 {
-                    feignBuilder.AddService(feignClientAttribute.FallbackFactory, lifetime);
+                    feignBuilder.AddService(feignClientAttribute.FallbackFactory, feignClientAttribute.Lifetime ?? lifetime);
                 }
             }
             return feignBuilder;

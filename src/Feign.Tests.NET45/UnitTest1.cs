@@ -69,7 +69,9 @@ namespace Feign.Tests.NET45
 
         [TestMethod]
         public void TestMethod_Standalone()
-        {            
+        {
+            bool b = IsPrime(10111);
+            Assert.IsTrue(b);
             FeignClients.AddFeignClients(options =>
             {
                 options.Assemblies.Add(typeof(ITestService).Assembly);
@@ -116,6 +118,22 @@ namespace Feign.Tests.NET45
 
             var rr = query.OrderBy(s => s.StatusCode).OrderBy("StatusCode", true, true).ToList();
 
+        }
+
+
+        public static bool IsPrime(int number)
+        {
+            int times = 0;
+            for (int i = 2; Math.Pow(i, 2) < number; ++i)
+            {
+                times++;
+                if (number % i == 0)
+                {
+                    return false;
+                }
+            }
+            Console.WriteLine(times);
+            return true;
         }
 
     }

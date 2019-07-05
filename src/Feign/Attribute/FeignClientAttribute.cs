@@ -17,5 +17,8 @@ namespace Feign
         public virtual string Url { get; set; }
         public virtual Type Fallback { get; set; }
         public virtual Type FallbackFactory { get; set; }
+
+        public FeignClientLifetime? Lifetime { get; set; }
+
     }
 }

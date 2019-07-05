@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Feign.Internal;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -20,7 +21,9 @@ namespace Feign
 
         public override HttpContent GetHttpContent(MediaTypeHeaderValue contentType)
         {
-            throw new NotImplementedException();
+            Encoding encoding = FeignClientUtils.GetEncoding(contentType);
+            //return new ObjectContent(Content, encoding ?? Encoding.UTF8, contentType);
+            return new ObjectStringContent(Content, encoding ?? Encoding.UTF8, contentType.MediaType);
         }
     }
 }
