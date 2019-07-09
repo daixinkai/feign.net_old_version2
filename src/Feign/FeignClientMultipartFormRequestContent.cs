@@ -14,15 +14,14 @@ namespace Feign
     {
         public FeignClientMultipartFormRequestContent()
         {
-            _contents = new List<object>();
+            _map = new Dictionary<string, object>();
         }
 
+        Dictionary<string, object> _map;
 
-        List<object> _contents;
-
-        public void AddContent(object content)
+        public void AddContent(string name, object content)
         {
-            _contents.Add(content);
+            _map.Add(name, content);
         }
 
         public override HttpContent GetHttpContent(MediaTypeHeaderValue contentType)
@@ -33,15 +32,22 @@ namespace Feign
                 boundary = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString("N")));
             }
             MultipartFormDataContent multipartFormDataContent = new MultipartFormDataContent(boundary);
-            foreach (var content in _contents)
+            foreach (var item in _map)
             {
+                object content = item.Value;
+                HttpContent httpContentPart = null;
                 if (content is HttpContent)
                 {
-                    multipartFormDataContent.Add((HttpContent)content);
+                    httpContentPart = (HttpContent)content;
                 }
                 else if (content is FeignClientRequestContent)
                 {
-                    multipartFormDataContent.Add(((FeignClientRequestContent)content).GetHttpContent(contentType));
+                    httpContentPart = ((FeignClientRequestContent)content).GetHttpContent(contentType);
+                }
+                if (httpContentPart != null)
+                {
+                    multipartFormDataContent.Add(httpContentPart, item.Key);
+                    //multipartFormDataContent.Add(httpContentPart);
                 }
             }
             return multipartFormDataContent;

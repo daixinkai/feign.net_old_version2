@@ -1,16 +1,18 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Feign.Tests
 {
     [CustomFeignClient("yun-platform-service-provider"
-        , Fallback = typeof(TestServiceFallback)
+        //, Fallback = typeof(TestServiceFallback)
         //, FallbackFactory = typeof(TestServiceFallbackFactory)
         //, Url = "http://localhost:8802/"
-        //, Url = "http://10.1.5.90:8802/"
+        , Url = "http://10.1.5.90:8802/"
+        //, Url = "http://localhost:62088/"
         )]
     [RequestMapping("/organizations")]
     public interface ITestService
@@ -21,8 +23,20 @@ namespace Feign.Tests
         [RequestMapping("/{id}/asdasdsad", Method = "POST")]
         Task PostValueAsync();
 
-        [RequestMapping("/{id}/asdasdsad", Method = "POST", ContentType = "multipart/form-data")]
-        Task UploadFile();
+        [RequestMapping("/Values/uploadFile", Method = "POST")]
+        Task<string> UploadFileAsync(IRequestFile file, [RequestForm] TestServiceParam param);
+
+        [RequestMapping("/Values/uploadFile", Method = "POST")]
+        Task<string> UploadFileAsync(IRequestFile file, [RequestForm] string name);
+
+        [RequestMapping("/Values/uploadFile", Method = "POST")]
+        Task<string> UploadFileAsync(TestServiceUploadFileParam param);
+
+        [RequestMapping("/Values/formTest", Method = "POST")]
+        Task<string> FormTestAsync([RequestForm] TestServiceParam param);
+
+        [RequestMapping("/Values/uploadFiles", Method = "POST")]
+        Task<string> UploadFilesAsync(IRequestFile file1, IRequestFile file2, IRequestFile file3);
 
         [RequestMapping("/{id}", Method = "GET")]
         Task<QueryResult<JObject>> GetQueryResultValueAsync([PathVariable("id")]string id, [RequestQuery] TestServiceParam param);

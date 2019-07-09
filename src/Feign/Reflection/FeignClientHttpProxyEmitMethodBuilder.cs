@@ -2,6 +2,7 @@
 using Feign.Proxy;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -194,24 +195,14 @@ namespace Feign.Reflection
             {
                 if (emitRequestContents.Count == 1)
                 {
-                    ConstructorInfo constructorInfo;
-                    switch (emitRequestContents[0].MediaType)
+                    if (typeof(IRequestFile).IsAssignableFrom(emitRequestContents[0].Parameter.ParameterType))
                     {
-                        case "application/json":
-                            constructorInfo = typeof(FeignClientJsonRequestContent).GetConstructors()[0];
-                            break;
-                        case "application/x-www-form-urlencoded":
-                            constructorInfo = typeof(FeignClientFormRequestContent).GetConstructors()[0];
-                            break;
-                        default:
-                            throw new NotSupportedException("不支持的content type");
+                        EmitFeignClientMultipartRequestContent(iLGenerator, emitRequestContents);
                     }
-                    iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContents[0].ParameterIndex);
-                    if (emitRequestContents[0].Parameter.ParameterType.IsValueType)
+                    else
                     {
-                        iLGenerator.Emit(OpCodes.Box, emitRequestContents[0].Parameter.ParameterType);
+                        EmitFeignClientRequestContent(iLGenerator, emitRequestContents[0], null);
                     }
-                    iLGenerator.Emit(OpCodes.Newobj, constructorInfo);
                 }
                 else if (emitRequestContents.Any(s => !s.SupportMultipart))
                 {
@@ -219,21 +210,7 @@ namespace Feign.Reflection
                 }
                 else
                 {
-                    LocalBuilder requestContent = iLGenerator.DeclareLocal(typeof(FeignClientMultipartFormRequestContent));
-                    MethodInfo methodAddContent = typeof(FeignClientMultipartFormRequestContent).GetMethod("AddContent");
-                    iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientMultipartFormRequestContent).GetConstructors()[0]);
-                    iLGenerator.Emit(OpCodes.Stloc, requestContent);
-                    for (int i = 0; i < emitRequestContents.Count; i++)
-                    {
-                        iLGenerator.Emit(OpCodes.Ldloc, requestContent);
-                        iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContents[i].ParameterIndex);
-                        if (emitRequestContents[0].Parameter.ParameterType.IsValueType)
-                        {
-                            iLGenerator.Emit(OpCodes.Box, emitRequestContents[i].Parameter.ParameterType);
-                        }
-                        iLGenerator.Emit(OpCodes.Call, methodAddContent);
-                    }
-                    iLGenerator.Emit(OpCodes.Ldloc, requestContent);
+                    EmitFeignClientMultipartRequestContent(iLGenerator, emitRequestContents);
                 }
             }
             else
@@ -269,6 +246,71 @@ namespace Feign.Reflection
             return localBuilder;
         }
 
+        void EmitFeignClientRequestContent(ILGenerator iLGenerator, EmitRequestContent emitRequestContent, LocalBuilder localBuilder)
+        {
+            if (typeof(IRequestFileForm).IsAssignableFrom(emitRequestContent.Parameter.ParameterType))
+            {
+                //iLGenerator.Emit(OpCodes.Ldstr, emitRequestContent.Parameter.Name);
+                iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.ParameterIndex);
+                iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientFileFormRequestContent).GetConstructors()[0]);
+                if (localBuilder != null)
+                {
+                    iLGenerator.Emit(OpCodes.Stloc, localBuilder);
+                }
+                return;
+            }
+            if (typeof(IRequestFile).IsAssignableFrom(emitRequestContent.Parameter.ParameterType))
+            {
+                iLGenerator.Emit(OpCodes.Ldstr, emitRequestContent.Parameter.Name);
+                iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.ParameterIndex);
+                iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientFileRequestContent).GetConstructors()[0]);
+                if (localBuilder != null)
+                {
+                    iLGenerator.Emit(OpCodes.Stloc, localBuilder);
+                }
+                return;
+            }
+            ConstructorInfo constructorInfo;
+            switch (emitRequestContent.MediaType)
+            {
+                case "application/json":
+                    constructorInfo = typeof(FeignClientJsonRequestContent<>).MakeGenericType(emitRequestContent.Parameter.ParameterType).GetConstructors()[0];
+                    break;
+                case "application/x-www-form-urlencoded":
+                    constructorInfo = typeof(FeignClientFormRequestContent<>).MakeGenericType(emitRequestContent.Parameter.ParameterType).GetConstructors()[0];
+                    break;
+                default:
+                    throw new NotSupportedException("不支持的content type");
+                    //constructorInfo = typeof(FeignClientFormRequestContent<>).MakeGenericType(emitRequestContent.Parameter.ParameterType).GetConstructors()[0];
+                    //break;
+            };
+            iLGenerator.Emit(OpCodes.Ldstr, emitRequestContent.Parameter.Name);
+            iLGenerator.Emit(OpCodes.Ldarg_S, emitRequestContent.ParameterIndex);
+            iLGenerator.Emit(OpCodes.Newobj, constructorInfo);
+            if (localBuilder != null)
+            {
+                iLGenerator.Emit(OpCodes.Stloc, localBuilder);
+            }
+        }
+
+        void EmitFeignClientMultipartRequestContent(ILGenerator iLGenerator, List<EmitRequestContent> emitRequestContents)
+        {
+            LocalBuilder requestContent = iLGenerator.DeclareLocal(typeof(FeignClientMultipartFormRequestContent));
+            MethodInfo methodAddContent = typeof(FeignClientMultipartFormRequestContent).GetMethod("AddContent");
+            iLGenerator.Emit(OpCodes.Newobj, typeof(FeignClientMultipartFormRequestContent).GetConstructors()[0]);
+            iLGenerator.Emit(OpCodes.Stloc, requestContent);
+            for (int i = 0; i < emitRequestContents.Count; i++)
+            {
+                LocalBuilder childRequestContent = iLGenerator.DeclareLocal(typeof(FeignClientRequestContent));
+                EmitFeignClientRequestContent(iLGenerator, emitRequestContents[i], childRequestContent);
+                iLGenerator.Emit(OpCodes.Ldloc, requestContent);
+                iLGenerator.Emit(OpCodes.Ldstr, emitRequestContents[i].Parameter.Name);
+                iLGenerator.Emit(OpCodes.Ldloc, childRequestContent);
+                iLGenerator.Emit(OpCodes.Call, methodAddContent);
+            }
+            iLGenerator.Emit(OpCodes.Ldloc, requestContent);
+        }
+
         void EmitBaseUrl(ILGenerator iLGenerator)
         {
             PropertyInfo propertyInfo = typeof(FeignClientHttpProxy).GetProperty("BaseUrl", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -278,10 +320,33 @@ namespace Feign.Reflection
 
         protected List<EmitRequestContent> EmitParameter(ILGenerator iLGenerator, MethodInfo method, LocalBuilder uri, LocalBuilder value)
         {
-            int index = 1;
+            int index = 0;
             List<EmitRequestContent> emitRequestContents = new List<EmitRequestContent>();
             foreach (var parameterInfo in method.GetParameters())
             {
+                index++;
+                if (typeof(IRequestFileForm).IsAssignableFrom(parameterInfo.ParameterType))
+                {
+                    emitRequestContents.Add(new EmitRequestContent
+                    {
+                        MediaType = "multipart/form-data",
+                        Parameter = parameterInfo,
+                        SupportMultipart = false,
+                        ParameterIndex = index
+                    });
+                    continue;
+                }
+                if (typeof(IRequestFile).IsAssignableFrom(parameterInfo.ParameterType))
+                {
+                    emitRequestContents.Add(new EmitRequestContent
+                    {
+                        MediaType = "form-data",
+                        Parameter = parameterInfo,
+                        SupportMultipart = true,
+                        ParameterIndex = index
+                    });
+                    continue;
+                }
                 if (parameterInfo.IsDefined(typeof(RequestBodyAttribute)))
                 {
                     emitRequestContents.Add(new EmitRequestContent
@@ -336,7 +401,7 @@ namespace Feign.Reflection
                 replaceValueMethod = replaceValueMethod.MakeGenericMethod(parameterInfo.ParameterType);
                 iLGenerator.Emit(OpCodes.Call, replaceValueMethod);
                 iLGenerator.Emit(OpCodes.Stloc, uri);
-                index++;
+
             }
             return emitRequestContents;
         }

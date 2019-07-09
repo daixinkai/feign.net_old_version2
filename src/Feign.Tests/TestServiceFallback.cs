@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -125,7 +126,7 @@ namespace Feign.Tests
 
         }
 
-        public Task UploadFile()
+        public Task<string> UploadFileAsync(IRequestFile file, TestServiceParam param)
         {
             throw new NotImplementedException();
         }
@@ -136,6 +137,26 @@ namespace Feign.Tests
         }
 
         public Task PostValueForm2Async([PathVariable] int id, [RequestParam] string test, [RequestForm] TestServiceParam param1, [RequestForm] TestServiceParam param2)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UploadFilesAsync(IRequestFile file1, IRequestFile file2, IRequestFile file3)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> FormTestAsync([RequestForm] TestServiceParam param)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UploadFileAsync(IRequestFile file, [RequestForm] string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UploadFileAsync(TestServiceUploadFileParam param)
         {
             throw new NotImplementedException();
         }

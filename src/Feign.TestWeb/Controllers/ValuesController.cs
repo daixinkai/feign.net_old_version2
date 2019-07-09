@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Feign.Tests;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -17,6 +18,26 @@ namespace Feign.TestWeb.Controllers
         public ActionResult<IEnumerable<string>> Get([FromServices] IDistributedCache distributedCache)
         {
             return new string[] { "value1", "value2", distributedCache?.GetHashCode().ToString() };
+        }
+
+        [HttpPost("uploadFile")]
+        [HttpPost("/organizations/values/uploadFile")]
+        public ActionResult<object> UploadFile(IFormFile file, [FromForm]TestServiceParam param)
+        {
+            return file?.Length;
+        }
+
+        [HttpPost("FormTest")]
+        [HttpPost("/organizations/values/formTest")]
+        public ActionResult<object> FormTest([FromForm]TestServiceParam param)
+        {
+            return param?.Name;
+        }
+
+        [HttpPost("uploadFiles")]
+        public ActionResult<object> UploadFiles(List<IFormFile> files)
+        {
+            return files?.Count + " : " + Request.Form.Files.Count;
         }
 
         // GET api/values/5
