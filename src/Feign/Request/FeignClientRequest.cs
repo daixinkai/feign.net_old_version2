@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Feign
+namespace Feign.Request
 {
     public class FeignClientRequest
     {

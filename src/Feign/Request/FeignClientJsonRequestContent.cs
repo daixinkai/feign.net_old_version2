@@ -9,7 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Feign
+namespace Feign.Request
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class FeignClientJsonRequestContent<T> : FeignClientRequestContent

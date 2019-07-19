@@ -12,7 +12,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Feign
+namespace Feign.Request
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class FeignClientFormRequestContent<T> : FeignClientRequestContent

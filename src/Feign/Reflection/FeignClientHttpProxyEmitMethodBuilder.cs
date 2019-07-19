@@ -1,5 +1,6 @@
 ﻿using Feign.Internal;
 using Feign.Proxy;
+using Feign.Request;
 using System;
 using System.Collections.Generic;
 using System.IO;

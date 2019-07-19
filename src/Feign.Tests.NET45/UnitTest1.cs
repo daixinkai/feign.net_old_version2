@@ -11,6 +11,7 @@ using Castle.Windsor;
 using Feign.Cache;
 using Feign.Logging;
 using Feign.Reflection;
+using Feign.Request;
 using Feign.Standalone;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

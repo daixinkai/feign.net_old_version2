@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Feign.Request;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
