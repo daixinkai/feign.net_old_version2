@@ -12,4 +12,13 @@ namespace Feign
         }
         public IFeignClient FeignClient { get; }
     }
+
+    //public abstract class FeignClientEventArgs<TService> : EventArgs
+    //{
+    //    protected FeignClientEventArgs(IFeignClient<TService> feignClient)
+    //    {
+    //        FeignClient = feignClient;
+    //    }
+    //    public IFeignClient<TService> FeignClient { get; }
+    //}
 }

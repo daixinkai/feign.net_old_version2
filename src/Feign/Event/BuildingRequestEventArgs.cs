@@ -16,4 +16,5 @@ namespace Feign
         public Uri RequestUri { get; set; }
         public IDictionary<string, string> Headers { get; }
     }
+
 }

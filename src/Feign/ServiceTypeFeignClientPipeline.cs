@@ -14,4 +14,12 @@ namespace Feign
         }
         public Type ServiceType { get; }
     }
+
+    class ServiceTypeFeignClientPipeline<TService> : ServiceTypeFeignClientPipeline, IServiceFeignClientPipeline<TService>
+    {
+        public ServiceTypeFeignClientPipeline() : base(typeof(TService))
+        {
+        }
+    }
+
 }

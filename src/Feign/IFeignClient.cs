@@ -13,7 +13,8 @@ namespace Feign
         string ServiceId { get; }
     }
 
-    public interface IFeignClient<TService> : IFeignClient
+    public interface IFeignClient<out TService> : IFeignClient
     {
+        TService Service { get; }
     }
 }

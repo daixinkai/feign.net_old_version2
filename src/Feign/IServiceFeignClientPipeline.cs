@@ -9,4 +9,9 @@ namespace Feign
     public interface IServiceFeignClientPipeline : IFeignClientPipeline
     {
     }
+
+    public interface IServiceFeignClientPipeline<TService> : IServiceFeignClientPipeline
+    {
+    }
+
 }

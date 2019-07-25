@@ -53,6 +53,11 @@ namespace Feign.Tests
 #endif
             });
             //feignBuilder.Options.FeignClientPipeline.BuildingRequest += FeignClientPipeline_BuildingRequest;
+            feignBuilder.Options.FeignClientPipeline.Service<ITestService>().BuildingRequest += (sender, e) =>
+            {
+                IFeignClient<ITestService> feignClient = e.FeignClient as IFeignClient<ITestService>;
+                ITestService service = feignClient.Service;
+            };
             feignBuilder.Options.FeignClientPipeline.Service("yun-platform-service-provider").BuildingRequest += (sender, e) =>
             {
                 IFallbackFeignClient fallbackFeignClient = e.FeignClient.AsFallback();
@@ -134,7 +139,14 @@ namespace Feign.Tests
                     {
                         string json = e.ResponseMessage.Content.ReadAsStringAsync().Result;
                         object data = Newtonsoft.Json.JsonConvert.DeserializeObject(json, e.ResultType.GetGenericArguments()[0]);
-                        queryResult = InvokeQueryResultConstructor(data.GetType(), data);
+                        if (data == null)
+                        {
+                            queryResult = InvokeQueryResultConstructor(e.ResultType.GetGenericArguments()[0]);
+                        }
+                        else
+                        {
+                            queryResult = InvokeQueryResultConstructor(data.GetType(), data);
+                        }
                     }
                     else
                     {

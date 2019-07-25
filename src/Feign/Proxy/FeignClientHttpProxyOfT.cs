@@ -9,13 +9,15 @@ using System.Threading.Tasks;
 
 namespace Feign.Proxy
 {
-    public abstract class FeignClientHttpProxy<TService> : FeignClientHttpProxy, IFeignClient<TService>
+    public abstract class FeignClientHttpProxy<TService> : FeignClientHttpProxy, IFeignClient<TService> where TService : class
     {
         public FeignClientHttpProxy(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory)
         {
             _serviceTypeFeignClientPipeline = _globalFeignClientPipeline?.GetServicePipeline<TService>();
         }
-        ServiceTypeFeignClientPipeline _serviceTypeFeignClientPipeline;
+        ServiceTypeFeignClientPipeline<TService> _serviceTypeFeignClientPipeline;
+
+        TService IFeignClient<TService>.Service { get { return this as TService; } }
 
         protected internal override void OnBuildingRequest(BuildingRequestEventArgs e)
         {

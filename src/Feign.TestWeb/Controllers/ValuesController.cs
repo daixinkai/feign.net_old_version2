@@ -10,7 +10,7 @@ using Microsoft.Extensions.Caching.Distributed;
 namespace Feign.TestWeb.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
+    [ApiController]    
     public class ValuesController : ControllerBase
     {
         // GET api/values
@@ -57,22 +57,22 @@ namespace Feign.TestWeb.Controllers
             //    Name = "asasdsad"
             //});
             //return await testService.GetValueAsync(id, "asdasd");
-            await testService.PostValueForm2Async(id, "", new TestServiceParam
-            {
-                Name = "testName"
-            }, new TestServiceParam
-            {
-                Name = "name"
-            });
-            testService.GetValueVoid(id, new TestServiceParam
-            {
-                Name = "testName"
-            }, new TestServiceParam
-            {
-                Name = "name"
-            });
-            await testService.PostValueAsync();
-            await testService.PostValueAsync(id, "", new TestServiceParam());
+            //await testService.PostValueForm2Async(id, "", new TestServiceParam
+            //{
+            //    Name = "testName"
+            //}, new TestServiceParam
+            //{
+            //    Name = "name"
+            //});
+            //testService.GetValueVoid(id, new TestServiceParam
+            //{
+            //    Name = "testName"
+            //}, new TestServiceParam
+            //{
+            //    Name = "name"
+            //});
+            //await testService.PostValueAsync();
+            //await testService.PostValueAsync(id, "", new TestServiceParam());
             return testService.GetQueryResultValue(id.ToString(), new TestServiceParam
             {
                 Name = "asasdsad"

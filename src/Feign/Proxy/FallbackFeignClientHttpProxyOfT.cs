@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Feign.Proxy
 {
-    public abstract class FallbackFeignClientHttpProxy<TService, TFallback> : FallbackFeignClientHttpProxy, IFallbackFeignClient<TService>, IFeignClient<TService>
+    public abstract class FallbackFeignClientHttpProxy<TService, TFallback> : FallbackFeignClientHttpProxy, IFallbackFeignClient<TService>, IFeignClient<TService> where TService : class
       where TFallback : TService
     {
         public FallbackFeignClientHttpProxy(IFeignOptions feignOptions, IServiceDiscovery serviceDiscovery, IServiceCacheProvider serviceCacheProvider, ILoggerFactory loggerFactory, TFallback fallback) : base(feignOptions, serviceDiscovery, serviceCacheProvider, loggerFactory, fallback)
@@ -20,7 +20,9 @@ namespace Feign.Proxy
         }
         public virtual TService Fallback { get; }
 
-        ServiceTypeFeignClientPipeline _serviceTypeFeignClientPipeline;
+        TService IFeignClient<TService>.Service { get { return this as TService; } }
+
+        ServiceTypeFeignClientPipeline<TService> _serviceTypeFeignClientPipeline;
 
         protected internal override void OnBuildingRequest(BuildingRequestEventArgs e)
         {

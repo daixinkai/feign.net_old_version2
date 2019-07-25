@@ -10,7 +10,7 @@ namespace Feign.Fallback
     {
         object Fallback { get; }
     }
-    public interface IFallbackFeignClient<out T> : IFallbackFeignClient
+    public interface IFallbackFeignClient<out T> : IFeignClient<T>, IFallbackFeignClient
     {
         new T Fallback { get; }
     }

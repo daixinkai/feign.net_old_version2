@@ -36,7 +36,7 @@ namespace Feign
         /// <param name="globalFeignClientPipeline"></param>
         /// <param name="serviceId"></param>
         /// <returns></returns>
-        public static IServiceFeignClientPipeline Service<TService>(this IGlobalFeignClientPipeline globalFeignClientPipeline)
+        public static IServiceFeignClientPipeline<TService> Service<TService>(this IGlobalFeignClientPipeline globalFeignClientPipeline)
         {
             return globalFeignClientPipeline.GetOrAddServicePipeline<TService>();
         }
